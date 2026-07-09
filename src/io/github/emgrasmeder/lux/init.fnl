@@ -59,7 +59,9 @@
        ">"))
 
 (fn component-store/create [name params]
-  ;; params should be an array of argument labels
+  "creates a new component-store
+  
+  params should be an array of argument labels"
   (let [arity (# params)
         pool-arity (+ arity 1)
         name (or name "(anonymous)")]
@@ -73,6 +75,10 @@
      
 
 (fn world/create [component-specs]
+  "creates a world with component stores
+  component-specs should map component-store name to params
+  
+  e.g. {:some-component-store-name {:some-param :some-other-param}}"
   (let [genid {:component (get-genid)
                :entity (get-genid)}
         world {:entities {}
@@ -379,28 +385,28 @@
        stores)))
 
 {
- :world {:create world/create
-         :create-entity world/create-entity
-         :get-by-id world/get-by-id
-         :get-table-by-id world/get-table-by-id
-         :select-entities-with-components world/select-entities-with-components
-         :run-updates world/run-updates
-         :run-removals world/run-removals
-         :run-updates world/run-updates
-         :run-creations world/run-creations
-         :empty world/empty
-         :call-on-common-components world/call-on-common-components}
+ :world/create world/create
+ :world/create-entity world/create-entity
+ :world/get-by-id world/get-by-id
+ :world/get-table-by-id world/get-table-by-id
+ :world/select-entities-with-components world/select-entities-with-components
+ :world/run-updates world/run-updates
+ :world/run-removals world/run-removals
+ :world/run-updates world/run-updates
+ :world/run-creations world/run-creations
+ :world/empty world/empty
+ :world/call-on-common-components world/call-on-common-components
          
  :__internal__
- {:component-store {:create component-store/create
-                    :pool-size component-store/pool-size
-                    :count component-store/count
-                    :get-by-id component-store/get-by-id
-                    :empty component-store/empty
-                    :create-component component-store/create-component
-                    :run-updates component-store/run-updates
-                    :run-removals component-store/run-removals
-                    ;; :common-entities-3 component-store/common-entities-3
-                    :call-on-common-components component-store/call-on-common-components
-                    :get-at component-store/get-at
-                    :last-component-pool-position component-store/last-component-pool-position}}}
+ {:component-store/create component-store/create
+  :component-store/pool-size component-store/pool-size
+  :component-store/count component-store/count
+  :component-store/get-by-id component-store/get-by-id
+  :component-store/empty component-store/empty
+  :component-store/create-component component-store/create-component
+  :component-store/run-updates component-store/run-updates
+  :component-store/run-removals component-store/run-removals
+  ;; :component-store/common-entities-3 component-store/common-entities-3
+  :component-store/call-on-common-components component-store/call-on-common-components
+  :component-store/get-at component-store/get-at
+  :component-store/last-component-pool-position component-store/last-component-pool-position}}

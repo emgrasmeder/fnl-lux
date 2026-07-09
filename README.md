@@ -41,6 +41,10 @@ acts on entities given according to certain conditions. i really gotta learn how
 
 The entry point to the ECS is `world/create`. You can pass it an argument like `{:componentStoreName {:arg1 :arg2}}` and it won't yell at you, that's all I know so far
 
+## Examples
+
+- [Tic-Tac-Toe CLI](examples/tic-tac-toe/) — two-player terminal game using Lux ECS for the board
+
 ## Testing
 
 If you've installed the deps.fnl binary, you can run
