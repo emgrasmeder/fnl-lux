@@ -1,0 +1,3 @@
+{:fennel-path "./?.fnl;.deps/git/com.github.emgrasmeder/lux.fnl/98b64fe0b4bf606bc16d1d9b79cd531aa5408c8f/src/?.fnl;.deps/git/com.github.emgrasmeder/lux.fnl/98b64fe0b4bf606bc16d1d9b79cd531aa5408c8f/src/?/init.fnl;.deps/git/com.github.emgrasmeder/lux.fnl/98b64fe0b4bf606bc16d1d9b79cd531aa5408c8f/src/?.fnl;.deps/git/com.github.emgrasmeder/lux.fnl/98b64fe0b4bf606bc16d1d9b79cd531aa5408c8f/src/?/init.fnl;.deps/git/com.github.emgrasmeder/lux.fnl/98b64fe0b4bf606bc16d1d9b79cd531aa5408c8f/src/?.fnl;.deps/git/com.github.emgrasmeder/lux.fnl/98b64fe0b4bf606bc16d1d9b79cd531aa5408c8f/src/?/init.fnl"
+ :lua-version "lua54"
+ :macro-path ""}

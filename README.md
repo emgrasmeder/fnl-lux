@@ -41,17 +41,18 @@ acts on entities given according to certain conditions. i really gotta learn how
 
 The entry point to the ECS is `world/create`. You can pass it an argument like `{:componentStoreName {:arg1 :arg2}}` and it won't yell at you, that's all I know so far
 
-## Examples
-
-- [Tic-Tac-Toe CLI](examples/tic-tac-toe/) — two-player terminal game using Lux ECS for the board
-
 ## Testing
 
 If you've installed the deps.fnl binary, you can run
 ```
 deps --profiles dev tasks/run-tests
 ```
-to run the tests. If you want to add more tests, you need to add them to the list in the `run-tests` file.
+to run the Lux library tests and the [tic-tac-toe](examples/tic-tac-toe/) and [game-menu](examples/game-menu/) example tests. To run only a subset, pass test names as arguments (see fennel-test docs). Add new root tests to the list in the `run-tests` file; example tests live under each example's `tests/` directory.
+
+## Examples
+
+- [Tic-Tac-Toe CLI](examples/tic-tac-toe/) — two-player terminal game using Lux ECS for the board
+- [Game Menu](examples/game-menu/) — Love2D menu with Play (beep) and Exit buttons using Lux ECS
 
 ##### Disclaimer
 I don't know how to make games, how to code in fennel, and how to build an ECS. I'm gratefully forking this repository from Benaiah so that I can add documentation for my own reference, and edit things in an attempt to understand them better.

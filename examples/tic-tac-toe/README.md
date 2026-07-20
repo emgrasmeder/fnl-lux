@@ -20,6 +20,13 @@ Requires [deps.fnl](https://gitlab.com/andreyorst/deps.fnl) and [Fennel](https:/
 - Enter a move as `1,2` or `1 2`.
 - X and O alternate; the first player is chosen at random.
 
+## Testing
+
+```bash
+cd examples/tic-tac-toe
+deps --profiles dev tasks/run-tests
+```
+
 ## Local development
 
 This example consumes Lux from git. To test against uncommitted changes in the parent repo, temporarily replace the git dep in `deps.fnl` with:

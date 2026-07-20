@@ -1,4 +1,4 @@
-(local unpack (or table.unpack))
+(local unpack (or table.unpack _G.unpack))
 
 (local fennelview (require :fennel.view))
 
