@@ -27,12 +27,4 @@ cd examples/tic-tac-toe
 deps --profiles dev tasks/run-tests
 ```
 
-## Local development
-
-This example consumes Lux from git. To test against uncommitted changes in the parent repo, temporarily replace the git dep in `deps.fnl` with:
-
-```fennel
-:deps {:com.github.emgrasmeder/lux.fnl {:local "../.."}}
-```
-
-Then run `deps` again.
+This example loads Lux from the parent repo checkout (`../../src`) via `deps.fnl` paths.

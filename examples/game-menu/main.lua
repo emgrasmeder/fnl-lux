@@ -22,15 +22,7 @@ if not table.unpack and unpack then
 end
 
 local function lux_fennel_paths()
-  local base = ".deps/git/com.github.emgrasmeder/lux.fnl"
-  if not love.filesystem.getInfo(base) then
-    error("Lux dependency missing — run `deps` in examples/game-menu first")
-  end
-  for _, sha in ipairs(love.filesystem.getDirectoryItems(base)) do
-    local root = base .. "/" .. sha .. "/src"
-    return root .. "/?.fnl;" .. root .. "/?/init.fnl"
-  end
-  error("Lux dependency missing — run `deps` in examples/game-menu first")
+  return "../../src/?.fnl;../../src/?/init.fnl"
 end
 
 local fennel = require("fennel")

@@ -47,12 +47,4 @@ deps --profiles dev tasks/run-tests
 
 From the repo root, game-menu tests also run as part of `deps --profiles dev tasks/run-tests`.
 
-## Local development
-
-To test against uncommitted Lux changes in the parent repo, temporarily replace the git dep in `deps.fnl` with:
-
-```fennel
-:deps {:com.github.emgrasmeder/lux.fnl {:local "../.."}}
-```
-
-Then run `deps` again.
+This example loads Lux from the parent repo checkout (`../../src`) via `deps.fnl` paths and `main.lua`.
