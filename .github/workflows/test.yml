@@ -18,11 +18,7 @@ jobs:
       - uses: leafo/gh-actions-luarocks@v6
 
       - name: Install Fennel
-        run: |
-          mkdir -p "$HOME/.local/bin"
-          curl -fsSL https://fennel-lang.org/fennel -o "$HOME/.local/bin/fennel"
-          chmod +x "$HOME/.local/bin/fennel"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+        run: luarocks install fennel 1.6.1-1
 
       - name: Install deps.fnl
         run: |
