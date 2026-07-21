@@ -43,6 +43,25 @@ The entry point to the ECS is `world/create`. You can pass it an argument like `
 
 ## Testing
 
+### Running tests in Podman
+
+CI and local testing use the same pinned toolchain image defined in [`Containerfile`](Containerfile). This avoids drift from runner-specific Lua/Fennel/deps installs.
+
+**Prerequisites**
+
+- **macOS:** Install [Podman Desktop](https://podman-desktop.io/) or `brew install podman`, then run `podman machine init && podman machine start`.
+- **Linux:** Install the `podman` package from your distribution.
+
+**Run all tests**
+
+```bash
+./scripts/ci-test.sh
+```
+
+The first run builds the `fnl-lux-ci:local` image; later runs reuse cached layers. CI uses the same script.
+
+### Running tests natively
+
 If you've installed the deps.fnl binary, you can run
 ```
 deps --profiles dev tasks/run-tests

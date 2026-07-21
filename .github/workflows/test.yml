@@ -11,28 +11,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: leafo/gh-actions-lua@v13
+      - name: Install Podman
+        run: sudo apt-get update && sudo apt-get install -y podman
+
+      - name: Restore CI image cache
+        uses: actions/cache@v4
         with:
-          luaVersion: "5.4.6"
+          path: /tmp/fnl-lux-ci-image.tar
+          key: fnl-lux-ci-${{ hashFiles('Containerfile') }}
+          restore-keys: |
+            fnl-lux-ci-
 
-      - uses: leafo/gh-actions-luarocks@v6
-
-      - name: Install Fennel
+      - name: Load cached image
         run: |
-          mkdir -p "$HOME/.local/bin"
-          git clone --depth 1 --branch 1.6.1 https://github.com/bakpakin/Fennel /tmp/fennel-src
-          make -C /tmp/fennel-src fennel LUA="$GITHUB_WORKSPACE/.lua/bin/lua"
-          cp /tmp/fennel-src/fennel "$HOME/.local/bin/fennel"
-          chmod +x "$HOME/.local/bin/fennel"
-          echo "PATH=$HOME/.local/bin:$PATH" >> "$GITHUB_ENV"
-
-      - name: Install deps.fnl
-        run: |
-          git clone --depth 1 https://gitlab.com/andreyorst/deps.fnl /tmp/deps.fnl
-          cp /tmp/deps.fnl/deps "$HOME/.local/bin/deps"
-          chmod +x "$HOME/.local/bin/deps"
+          if [ -f /tmp/fnl-lux-ci-image.tar ]; then
+            podman load -i /tmp/fnl-lux-ci-image.tar
+          fi
 
       - name: Run tests
-        env:
-          DEPS_NO_PROMPT: "true"
-        run: deps --profiles dev --no-prompt tasks/run-tests
+        run: ./scripts/ci-test.sh
+
+      - name: Save CI image cache
+        if: success()
+        run: podman save fnl-lux-ci:local -o /tmp/fnl-lux-ci-image.tar
