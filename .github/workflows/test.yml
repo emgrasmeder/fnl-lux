@@ -18,15 +18,19 @@ jobs:
       - uses: leafo/gh-actions-luarocks@v6
 
       - name: Install Fennel
-        run: luarocks install fennel 1.6.1-1
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          git clone --depth 1 --branch 1.6.1 https://github.com/bakpakin/Fennel /tmp/fennel-src
+          make -C /tmp/fennel-src fennel LUA="$GITHUB_WORKSPACE/.lua/bin/lua"
+          cp /tmp/fennel-src/fennel "$HOME/.local/bin/fennel"
+          chmod +x "$HOME/.local/bin/fennel"
+          echo "PATH=$HOME/.local/bin:$PATH" >> "$GITHUB_ENV"
 
       - name: Install deps.fnl
         run: |
-          mkdir -p "$HOME/.local/bin"
           git clone --depth 1 https://gitlab.com/andreyorst/deps.fnl /tmp/deps.fnl
           cp /tmp/deps.fnl/deps "$HOME/.local/bin/deps"
           chmod +x "$HOME/.local/bin/deps"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Run tests
         env:
