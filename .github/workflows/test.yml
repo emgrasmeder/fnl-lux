@@ -22,9 +22,11 @@ jobs:
 
       - name: Install deps.fnl
         run: |
+          mkdir -p "$HOME/.local/bin"
           git clone --depth 1 https://gitlab.com/andreyorst/deps.fnl /tmp/deps.fnl
           cp /tmp/deps.fnl/deps "$HOME/.local/bin/deps"
           chmod +x "$HOME/.local/bin/deps"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Run tests
         env:
