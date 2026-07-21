@@ -9,7 +9,7 @@
     _ default-tests))
 
 (local tests
-  [:world-test :systems-test])
+  [:world-test :systems-test :click-test])
 
 (-> tests
     select-tests

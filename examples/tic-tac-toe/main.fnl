@@ -1,71 +1,36 @@
 (local world-mod (require :world))
 (local systems (require :systems))
+(local ui (require :ui))
 
-(fn player-label [player]
-  (tostring player))
+(var game nil)
+(var state nil)
 
-(fn other-player [player]
-  (if (= player :X) :O :X))
-
-(fn trim [s]
-  (string.gsub s "^%s*(.-)%s*$" "%1"))
-
-(fn parse-move [input]
-  (let [s (trim (or input ""))
-        (x y) (s:match "^(%d+)%s*,%s*(%d+)$")]
-    (if x
-        (values x y)
-        (s:match "^(%d+)%s+(%d+)$"))))
-
-(fn print-turn [player game]
-  (print (.. "it's " (player-label player) "'s turn"))
-  (print (systems.format-board-line game.world game.cell-at)))
-
-(fn announce-first-player [player]
-  (print (.. (player-label player) " goes first!")))
-
-(fn handle-move [game current-player invalid-msg]
-  (let [input (io.read)]
-    (if (not input)
-        :quit
-        (let [(row-str col-str) (parse-move input)]
-          (if (not row-str)
-              (do
-                (print invalid-msg)
-                current-player)
-              (let [row (tonumber row-str)
-                    col (tonumber col-str)]
-                (if (systems.apply-move game current-player row col)
-                    (if (systems.winner game)
-                        :win
-                        (if (systems.draw? game)
-                            :draw
-                            (other-player current-player)))
-                    (do
-                      (print invalid-msg)
-                      current-player))))))))
-
-(fn run-game []
+(fn reset-game! []
   (math.randomseed (os.time))
-  (let [first-player (if (= (math.random 2) 1) :X :O)
-        game (world-mod.create-game-world)
-        invalid-msg "you have to pick a valid move"]
-    (announce-first-player first-player)
-    (var current-player first-player)
-    (var done false)
-    (while (not done)
-      (print-turn current-player game)
-      (let [result (handle-move game current-player invalid-msg)]
-        (case result
-          :quit (set done true)
-          :win (do
-                 (print-turn current-player game)
-                 (print (.. (player-label current-player) " wins!"))
-                 (set done true))
-          :draw (do
-                  (print-turn current-player game)
-                  (print "Draw!")
-                  (set done true))
-          player (set current-player player))))))
+  (set game (world-mod.create-game-world))
+  (set state {:current-player (systems.pick-first-player)
+              :phase :playing
+              :message nil}))
 
-(run-game)
+(fn love.load []
+  (reset-game!))
+
+(fn love.draw []
+  (ui.render game state))
+
+(fn love.mousepressed [mx my button]
+  (when (and (= button 1) (= state.phase :playing))
+    (let [outcome (systems.handle-click game state mx my)]
+      (when outcome
+        (case (. outcome :result)
+          :win (set state {:phase :ended
+                           :message (.. (systems.player-label (. outcome :winner)) " wins!")
+                           :current-player (. outcome :winner)})
+          :draw (set state {:phase :ended
+                            :message "Draw!"
+                            :current-player state.current-player})
+          :continue (tset state :current-player (. outcome :next-player)))))))
+
+(fn love.keypressed [key]
+  (when (and (= key "r") (= state.phase :ended))
+    (reset-game!)))

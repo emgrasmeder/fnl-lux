@@ -1,24 +1,39 @@
-# Tic-Tac-Toe CLI Example
+# Tic-Tac-Toe Love2D Example
 
-A two-player tic-tac-toe game in the terminal, built on [Lux](https://github.com/emgrasmeder/fnl-lux).
+A two-player tic-tac-toe game in Love2D, built on [Lux](https://github.com/emgrasmeder/fnl-lux).
 
-The board is modeled as nine ECS cell entities, each with `:position` and `:mark` components.
+The board is modeled as nine ECS cell entities, each with `:position`, `:mark`, and `:cell-bounds` components.
+
+## Prerequisites
+
+- [Love2D 11+](https://love2d.org/)
+- [deps.fnl](https://gitlab.com/andreyorst/deps.fnl)
+- [Fennel](https://fennel-lang.org/) (installed automatically as a Lua rock via `deps`)
+
+## Setup
+
+```bash
+cd examples/tic-tac-toe
+deps
+deps --lua-version 5.1 --no-prompt
+```
+
+Love2D uses Lua 5.1; the second command installs the Fennel rock for that runtime.
+
+Run `deps --fennel-ls` to regenerate `flsproject.fnl` for editor tooling.
 
 ## Run
 
 ```bash
 cd examples/tic-tac-toe
-deps
-deps main.fnl
+love .
 ```
-
-Requires [deps.fnl](https://gitlab.com/andreyorst/deps.fnl) and [Fennel](https://fennel-lang.org/). Run `deps --fennel-ls` to regenerate `flsproject.fnl` for editor tooling.
 
 ## Play
 
-- Coordinates are `1,1` (top-left) through `3,3` (bottom-right).
-- Enter a move as `1,2` or `1 2`.
-- X and O alternate; the first player is chosen at random.
+- **Mouse** — click an empty cell to play
+- X and O alternate; the first player is chosen at random
+- When someone wins or the board is full, press **R** to start a new game
 
 ## Testing
 
@@ -27,4 +42,4 @@ cd examples/tic-tac-toe
 deps --profiles dev tasks/run-tests
 ```
 
-This example loads Lux from the parent repo checkout (`../../src`) via `deps.fnl` paths.
+This example loads Lux from the parent repo checkout (`../../src`) via `deps.fnl` paths and `main.lua`.

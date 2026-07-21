@@ -83,6 +83,23 @@
       (assert-eq nil (systems.winner game))
       (assert-eq true (systems.draw? game)))))
 
+(deftest hit-test-inside-test
+  (testing "hit-test-at inside cell"
+    (let [game (fresh-game)
+          [x y w h] (world.cell-bounds-at 1 1)
+          mx (+ x (/ w 2))
+          my (+ y (/ h 2))
+          hit (systems.hit-test-at game mx my)]
+      (assert-is hit)
+      (assert-eq 1 hit.row)
+      (assert-eq 1 hit.col))))
+
+(deftest hit-test-outside-test
+  (testing "hit-test-at outside board"
+    (let [game (fresh-game)]
+      (assert-not (systems.hit-test-at game 0 0))
+      (assert-not (systems.hit-test-at game 999 999)))))
+
 (deftest format-board-line-test
   (testing "board line format"
     (let [game (fresh-game)

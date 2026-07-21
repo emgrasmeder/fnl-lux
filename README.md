@@ -22,7 +22,7 @@ There's probably a better way but that's as much as I've figured out from deps.f
 
 ## Love2d ECS
 
-I just thing ECS is a neat pattern
+I just think ECS is a neat pattern
 
 ### Entities
 
@@ -39,15 +39,13 @@ acts on entities given according to certain conditions. i really gotta learn how
 
 ## Use
 
-The entry point to the ECS is `world/create`. You can pass it an argument like `{:componentStoreName {:arg1 :arg2}}` and it won't yell at you, that's all I know so far
+The entry point to the ECS is `world/create`. You can pass it an argument like `{:componentStoreName {:arg1 :arg2}}`... See the `examples/` directory for more depth
 
 ## Testing
 
 ### Running tests in Podman
 
-CI and local testing use the same pinned toolchain image defined in [`Containerfile`](Containerfile). This avoids drift from runner-specific Lua/Fennel/deps installs.
-
-**Prerequisites**
+see [`Containerfile`](Containerfile)
 
 - **macOS:** Install [Podman Desktop](https://podman-desktop.io/) or `brew install podman`, then run `podman machine init && podman machine start`.
 - **Linux:** Install the `podman` package from your distribution.
@@ -58,7 +56,7 @@ CI and local testing use the same pinned toolchain image defined in [`Containerf
 ./scripts/ci-test.sh
 ```
 
-The first run builds the `fnl-lux-ci:local` image; later runs reuse cached layers. CI uses the same script.
+The first run builds the `fnl-lux-ci:local` image
 
 ### Running tests natively
 
@@ -70,8 +68,8 @@ to run the Lux library tests and the [tic-tac-toe](examples/tic-tac-toe/) and [g
 
 ## Examples
 
-- [Tic-Tac-Toe CLI](examples/tic-tac-toe/) — two-player terminal game using Lux ECS for the board
+- [Tic-Tac-Toe Love2D](examples/tic-tac-toe/) — two-player tic-tac-toe using Lux ECS for the board
 - [Game Menu](examples/game-menu/) — Love2D menu with Play (beep) and Exit buttons using Lux ECS
 
 ##### Disclaimer
-I don't know how to make games, how to code in fennel, and how to build an ECS. I'm gratefully forking this repository from Benaiah so that I can add documentation for my own reference, and edit things in an attempt to understand them better.
+I don't know how to make games, how to code in fennel, or how to build an ECS. I'm gratefully forking this repository from Benaiah so that I can add documentation for my own reference, and edit things in an attempt to understand them better.

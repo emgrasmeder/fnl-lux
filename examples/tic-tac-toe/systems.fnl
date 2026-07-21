@@ -18,6 +18,15 @@
    [1 1 2 2 3 3]
    [1 3 2 2 3 1]])
 
+(fn player-label [player]
+  (tostring player))
+
+(fn other-player [player]
+  (if (= player :X) :O :X))
+
+(fn pick-first-player []
+  (if (= (math.random 2) 1) :X :O))
+
 (fn mark->display [player]
   (if (or (not player) (= player :empty)) "[]" (tostring player)))
 
@@ -77,7 +86,49 @@
           (set full false))))
     (and full (not (winner game)))))
 
+(fn point-in-bounds? [mx my x y w h]
+  (and (>= mx x) (< mx (+ x w))
+       (>= my y) (< my (+ y h))))
+
+(fn entity-components [world entity-id]
+  (get-table-by-id world entity-id))
+
+(fn hit-test-at [game mx my]
+  (let [world game.world
+        cell-at game.cell-at]
+    (var result nil)
+    (for [row 1 3]
+      (for [col 1 3]
+        (let [entity-id (. cell-at (world-mod.cell-key row col))
+              components (entity-components world entity-id)]
+          (when (and components (not result))
+            (let [[x y w h] components.cell-bounds]
+              (when (point-in-bounds? mx my x y w h)
+                (set result {:entity-id entity-id :row row :col col})))))))
+    result))
+
+(fn status-text [state]
+  (case state.phase
+    :playing (.. (player-label state.current-player) "'s turn")
+    :ended (or state.message "")))
+
+(fn handle-click [game state mx my]
+  (let [hit (hit-test-at game mx my)]
+    (when hit
+      (let [{:row row :col col} hit]
+        (when (apply-move game state.current-player row col)
+          (if (winner game)
+              {:result :win :winner state.current-player}
+              (if (draw? game)
+                  {:result :draw}
+                  {:result :continue :next-player (other-player state.current-player)})))))))
+
 {:format-board-line format-board-line
  :apply-move apply-move
  :winner winner
- :draw? draw?}
+ :draw? draw?
+ :pick-first-player pick-first-player
+ :player-label player-label
+ :status-text status-text
+ :hit-test-at hit-test-at
+ :handle-click handle-click}
