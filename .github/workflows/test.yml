@@ -30,7 +30,3 @@ jobs:
 
       - name: Run tests
         run: ./scripts/ci-test.sh
-
-      - name: Save CI image cache
-        if: success()
-        run: podman save fnl-lux-ci:local -o /tmp/fnl-lux-ci-image.tar
