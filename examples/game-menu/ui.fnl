@@ -1,6 +1,7 @@
 (local world-api (. (require :io.github.emgrasmeder.lux) :world))
 (local get-table-by-id (. world-api :get-table-by-id))
 (local systems (require :systems))
+(local love-ui (require :shared.love-ui))
 
 (fn entity-components [world entity-id]
   (get-table-by-id world entity-id))
@@ -13,22 +14,17 @@
         (if highlighted?
             (love.graphics.setColor 0.35 0.35 0.45 1)
             (love.graphics.setColor 0.2 0.2 0.25 1))
-        (love.graphics.rectangle "fill" x y w h)
+        (love-ui.fill-rect "fill" x y w h)
         (love.graphics.setColor 0.9 0.9 0.95 1)
-        (love.graphics.rectangle "line" x y w h)
-        (let [font (love.graphics.getFont)
-              text-width (font:getWidth label)
-              text-height (font:getHeight)]
-          (love.graphics.print label
-                               (+ x (/ (- w text-width) 2))
-                               (+ y (/ (- h text-height) 2))))))))
+        (love-ui.fill-rect "line" x y w h)
+        (love-ui.print-centered-in-rect label x y w h)))))
 
 (fn render-menu [menu focused-index]
   (let [world menu.world
         button-ids menu.button-ids
         (mx my) (love.mouse.getPosition)
         hover-id (systems.hit-test-at menu mx my)]
-    (love.graphics.clear 0.08 0.08 0.1 1)
+    (love-ui.clear-background)
     (love.graphics.setColor 1 1 1 1)
     (love.graphics.print "Game Menu" 20 20)
     (for [i 1 (# button-ids)]

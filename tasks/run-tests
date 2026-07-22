@@ -9,7 +9,7 @@
     _ default-tests))
 
 (local tests
-  [:figuring-it-out])
+  [:figuring-it-out :example-coverage-test])
 
 (-> tests
     select-tests

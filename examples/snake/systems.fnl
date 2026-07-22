@@ -2,6 +2,7 @@
 (local get-table-by-id (. world-api :get-table-by-id))
 (local run-updates (. world-api :run-updates))
 (local world-mod (require :world))
+(local tick (require :shared.tick))
 
 (fn opposite-direction [direction]
   (case direction
@@ -127,10 +128,8 @@
 
 (fn step [game state dt on-eat on-death]
   (when (= state.phase :playing)
-    (set state.step-timer (+ state.step-timer dt))
-    (when (>= state.step-timer 1.0)
-      (set state.step-timer (- state.step-timer 1.0))
-      (advance-step! game state on-eat on-death))))
+    (tick.step-on-interval state dt 1.0
+      (fn [] (advance-step! game state on-eat on-death)))))
 
 {:opposite-direction opposite-direction
  :direction-for-key direction-for-key

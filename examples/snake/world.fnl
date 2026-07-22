@@ -1,6 +1,8 @@
 (local world-api (. (require :io.github.emgrasmeder.lux) :world))
 (local create (. world-api :create))
 (local create-entity (. world-api :create-entity))
+(local grid (require :shared.grid))
+(local util (require :shared.util))
 
 (local GRID-W 20)
 (local GRID-H 20)
@@ -10,16 +12,13 @@
 
 (local DIRECTIONS [:up :down :left :right])
 
-(fn cell-key [row col] (.. row "," col))
+(fn cell-key [row col] (grid.pos-key row col))
 
 (fn cell-bounds-at [row col]
-  [(+ BOARD-OX (* (- col 1) CELL-SIZE))
-   (+ BOARD-OY (* (- row 1) CELL-SIZE))
-   CELL-SIZE
-   CELL-SIZE])
+  (grid.cell-bounds-at BOARD-OX BOARD-OY CELL-SIZE row col))
 
-(fn window-width [] (+ BOARD-OX (* GRID-W CELL-SIZE) BOARD-OX))
-(fn window-height [] (+ BOARD-OY (* GRID-H CELL-SIZE) BOARD-OY))
+(fn window-width [] (grid.window-width BOARD-OX GRID-W CELL-SIZE))
+(fn window-height [] (grid.window-height BOARD-OY GRID-H CELL-SIZE))
 
 (fn border? [row col]
   (or (= row 1) (= row GRID-H) (= col 1) (= col GRID-H)))
@@ -31,14 +30,6 @@
 (fn terrain-at [row col]
   (if (border? row col) :wall :empty))
 
-(fn shuffle! [list]
-  (for [i (# list) 2 -1]
-    (let [j (math.random i)]
-      (let [tmp (. list i)]
-        (tset list i (. list j))
-        (tset list j tmp))))
-  list)
-
 (fn all-playable-coords []
   (var coords [])
   (for [row 2 (- GRID-H 1)]
@@ -46,13 +37,10 @@
       (table.insert coords {:row row :col col})))
   coords)
 
-(fn positions-equal? [a b]
-  (and a b (= (. a :row) (. b :row)) (= (. a :col) (. b :col))))
-
 (fn occupied-by-body? [body row col]
   (var found false)
   (each [_ segment (ipairs body)]
-    (when (positions-equal? segment {:row row :col col})
+    (when (util.positions-equal? segment {:row row :col col})
       (set found true)))
   found)
 
@@ -85,24 +73,25 @@
       (. candidates (math.random (# candidates))))))
 
 (fn build-grid-world []
-  (let [world (create {:position [:row :col]
-                       :terrain [:kind]
-                       :cell-bounds [:x :y :w :h]
-                       :actor [:kind]
-                       :direction [:dir]})
-        cell-at {}]
-    (for [row 1 GRID-H]
-      (for [col 1 GRID-W]
-        (let [[x y w h] (cell-bounds-at row col)
-              kind (terrain-at row col)
-              id (create-entity world [:position row col
-                                       :terrain kind
-                                       :cell-bounds x y w h])]
-          (tset cell-at (cell-key row col) id))))
-    {:world world :cell-at cell-at}))
+  (grid.build-cell-grid
+   create create-entity
+   {:position [:row :col]
+    :terrain [:kind]
+    :cell-bounds [:x :y :w :h]
+    :actor [:kind]
+    :direction [:dir]}
+   GRID-W GRID-H
+   (fn [world _create-entity row col]
+     (let [[x y w h] (cell-bounds-at row col)
+           kind (terrain-at row col)]
+       (create-entity world [:position row col
+                            :terrain kind
+                            :cell-bounds x y w h])))))
 
 (fn create-game-from-state [body food-pos direction]
-  (let [{:world world :cell-at cell-at} (build-grid-world)
+  (let [result (build-grid-world)
+        world (. result :world)
+        cell-at (. result :cell-at)
         head (. body 1)
         player-id (create-entity world [:position (. head :row) (. head :col)
                                         :actor :player
@@ -138,7 +127,7 @@
  :border? border?
  :playable? playable?
  :terrain-at terrain-at
- :positions-equal? positions-equal?
+ :positions-equal? util.positions-equal?
  :occupied-by-body? occupied-by-body?
  :pick-random-direction pick-random-direction
  :direction-delta direction-delta

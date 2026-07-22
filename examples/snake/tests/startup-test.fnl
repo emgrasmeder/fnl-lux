@@ -2,7 +2,7 @@
  {: deftest : testing : assert-is}
  :io.gitlab.andreyorst.fennel-test)
 
-(local startup (require :test-support.startup))
+(local startup (require :shared.testing.startup))
 
 (deftest startup-test
   (testing "game loads and renders first frame"

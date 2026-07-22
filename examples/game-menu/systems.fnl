@@ -1,9 +1,6 @@
 (local world-api (. (require :io.github.emgrasmeder.lux) :world))
 (local get-table-by-id (. world-api :get-table-by-id))
-
-(fn point-in-button? [mx my x y w h]
-  (and (>= mx x) (< mx (+ x w))
-       (>= my y) (< my (+ y h))))
+(local util (require :shared.util))
 
 (fn entity-components [world entity-id]
   (get-table-by-id world entity-id))
@@ -16,7 +13,7 @@
       (let [components (entity-components world id)]
         (when components
           (let [[x y w h] components.button]
-            (when (point-in-button? mx my x y w h)
+            (when (util.point-in-rect? mx my x y w h)
               (set result id))))))
     result))
 
@@ -54,7 +51,7 @@
                                           callbacks)
       "escape" (dispatch-action :exit callbacks))))
 
-{:point-in-button? point-in-button?
+{:point-in-button? util.point-in-rect?
  :hit-test-at hit-test-at
  :focus-next focus-next
  :focus-prev focus-prev

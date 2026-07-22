@@ -1,8 +1,18 @@
-(local love-mock (require :test-support.love-mock))
+(local love-mock (require :shared.testing.love-mock))
+
+;; Keep in sync with fennel path in each example main.lua
+(local PRODUCTION-FENNEL-PATH
+  "./?.fnl;../?.fnl;../../src/?.fnl;../../src/?/init.fnl")
+
+(fn bootstrap-production! []
+  (let [fennel (require :fennel)]
+    (fennel.install {:path PRODUCTION-FENNEL-PATH
+                     :macroPath "./?.fnlm"})))
 
 (fn run! []
   (love-mock.install!)
   (love-mock.clear-example-modules!)
+  (bootstrap-production!)
   (let [(ok err) (pcall (fn []
                            (local fennel (require :fennel))
                            (fennel.dofile "main.fnl" {:env _G})
@@ -13,4 +23,5 @@
     (when (not ok)
       (error (.. "startup failed: " (tostring err))))))
 
-{:run! run!}
+{:PRODUCTION-FENNEL-PATH PRODUCTION-FENNEL-PATH
+ :run! run!}

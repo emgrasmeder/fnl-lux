@@ -2,6 +2,7 @@
 (local get-table-by-id (. world-api :get-table-by-id))
 (local run-updates (. world-api :run-updates))
 (local world-mod (require :world))
+(local util (require :shared.util))
 
 ;; Win checks read marks per cell via get-table-by-id. For iterating
 ;; entities that share several component types, Lux provides
@@ -86,10 +87,6 @@
           (set full false))))
     (and full (not (winner game)))))
 
-(fn point-in-bounds? [mx my x y w h]
-  (and (>= mx x) (< mx (+ x w))
-       (>= my y) (< my (+ y h))))
-
 (fn entity-components [world entity-id]
   (get-table-by-id world entity-id))
 
@@ -103,7 +100,7 @@
               components (entity-components world entity-id)]
           (when (and components (not result))
             (let [[x y w h] components.cell-bounds]
-              (when (point-in-bounds? mx my x y w h)
+              (when (util.point-in-rect? mx my x y w h)
                 (set result {:entity-id entity-id :row row :col col})))))))
     result))
 

@@ -3,15 +3,14 @@
 (local run-updates (. world-api :run-updates))
 (local pathfinding (require :pathfinding))
 (local world-mod (require :world))
+(local util (require :shared.util))
+(local tick (require :shared.tick))
 
 (fn get-actor-position [game entity-id]
   (let [components (get-table-by-id game.world entity-id)]
     (when components
       {:row (. components.position 1)
        :col (. components.position 2)})))
-
-(fn positions-equal? [a b]
-  (and a b (= (. a :row) (. b :row)) (= (. a :col) (. b :col))))
 
 (fn compute-path [game]
   (let [terrain (world-mod.terrain-from-game game)
@@ -31,7 +30,7 @@
     (var result nil)
     (each [_ cell (ipairs copy)]
       (when (not result)
-        (when (not (positions-equal? cell monster-pos))
+        (when (not (util.positions-equal? cell monster-pos))
           (let [path (pathfinding.find-path terrain monster-pos cell game.grid-w game.grid-h)]
             (when (and path (> (# path) 0))
               (set result cell))))))
@@ -60,9 +59,9 @@
         (let [entity-id (. cell-at (world-mod.cell-key row col))
               components (get-table-by-id world entity-id)
               terrain (. components.terrain 1)
-              cell-text (if (positions-equal? monster-pos {:row row :col col})
+              cell-text (if (util.positions-equal? monster-pos {:row row :col col})
                           "X"
-                          (if (positions-equal? goal-pos {:row row :col col})
+                          (if (util.positions-equal? goal-pos {:row row :col col})
                               "O"
                               (if (= terrain :wall) "#" ".")))]
           (table.insert parts (.. row "," col ": " cell-text)))))
@@ -75,7 +74,7 @@
 (fn advance-step! [game state on-catch]
   (let [monster-pos (get-actor-position game game.monster-id)
         goal-pos (get-actor-position game game.goal-id)]
-    (if (positions-equal? monster-pos goal-pos)
+    (if (util.positions-equal? monster-pos goal-pos)
         (do
           (when on-catch (on-catch))
           (relocate-goal! game)
@@ -95,10 +94,8 @@
   (advance-step! game state on-catch))
 
 (fn step [game state dt on-catch]
-  (set state.step-timer (+ state.step-timer dt))
-  (when (>= state.step-timer 1.0)
-    (set state.step-timer (- state.step-timer 1.0))
-    (advance-step! game state on-catch)))
+  (tick.step-on-interval state dt 1.0
+    (fn [] (advance-step! game state on-catch))))
 
 {:get-actor-position get-actor-position
  :compute-path compute-path
@@ -109,4 +106,4 @@
  :step-once step-once
  :format-grid-line format-grid-line
  :actor-label actor-label
- :positions-equal? positions-equal?}
+ :positions-equal? util.positions-equal?}

@@ -1,8 +1,8 @@
 (local world-api (. (require :io.github.emgrasmeder.lux) :world))
 (local create (. world-api :create))
 (local create-entity (. world-api :create-entity))
-(local run-updates (. world-api :run-updates))
-(local pathfinding (require :pathfinding))
+(local grid (require :shared.grid))
+(local util (require :shared.util))
 
 (local GRID-W 15)
 (local GRID-H 15)
@@ -11,24 +11,13 @@
 (local BOARD-OX 40)
 (local BOARD-OY 40)
 
-(fn cell-key [row col] (pathfinding.pos-key row col))
+(fn cell-key [row col] (grid.pos-key row col))
 
 (fn cell-bounds-at [row col]
-  [(+ BOARD-OX (* (- col 1) CELL-SIZE))
-   (+ BOARD-OY (* (- row 1) CELL-SIZE))
-   CELL-SIZE
-   CELL-SIZE])
+  (grid.cell-bounds-at BOARD-OX BOARD-OY CELL-SIZE row col))
 
-(fn window-width [] (+ BOARD-OX (* GRID-W CELL-SIZE) BOARD-OX))
-(fn window-height [] (+ BOARD-OY (* GRID-H CELL-SIZE) BOARD-OY))
-
-(fn shuffle! [list]
-  (for [i (# list) 2 -1]
-    (let [j (math.random i)]
-      (let [tmp (. list i)]
-        (tset list i (. list j))
-        (tset list j tmp))))
-  list)
+(fn window-width [] (grid.window-width BOARD-OX GRID-W CELL-SIZE))
+(fn window-height [] (grid.window-height BOARD-OY GRID-H CELL-SIZE))
 
 (fn all-coords [grid-w grid-h]
   (var coords [])
@@ -85,7 +74,7 @@
 (fn generate-terrain [grid-w grid-h wall-density]
   (let [terrain (empty-terrain grid-w grid-h)
         target-walls (math.floor (* grid-w grid-h wall-density))
-        coords (shuffle! (all-coords grid-w grid-h))]
+        coords (util.shuffle! (all-coords grid-w grid-h))]
     (var placed 0)
     (each [_ coord (ipairs coords)]
       (when (< placed target-walls)
@@ -105,13 +94,10 @@
         (table.insert cells {:row row :col col}))))
   cells)
 
-(fn pick-random-cell [cells]
-  (. cells (math.random (# cells))))
-
 (fn pick-distinct-cells [cells count]
   (let [copy []
         _ (each [_ cell (ipairs cells)] (table.insert copy cell))]
-    (shuffle! copy)
+    (util.shuffle! copy)
     [(. copy 1) (. copy 2)]))
 
 (fn terrain-from-game [game]
@@ -125,27 +111,23 @@
           (tset terrain key (. components.terrain 1)))))
     terrain))
 
-(fn apply-terrain-to-world! [world cell-at terrain]
-  (let [updates {}]
-    (each [key entity-id (pairs cell-at)]
-      (tset updates entity-id [(. terrain key)]))
-    (run-updates world {:terrain updates})))
-
 (fn create-game-world []
   (let [terrain (generate-terrain GRID-W GRID-H WALL-DENSITY)
-        world (create {:position [:row :col]
-                       :terrain [:kind]
-                       :cell-bounds [:x :y :w :h]
-                       :actor [:kind]})
-        cell-at {}]
-    (for [row 1 GRID-H]
-      (for [col 1 GRID-W]
-        (let [[x y w h] (cell-bounds-at row col)
-              kind (. terrain (cell-key row col))
-              id (create-entity world [:position row col
-                                       :terrain kind
-                                       :cell-bounds x y w h])]
-          (tset cell-at (cell-key row col) id))))
+        result (grid.build-cell-grid
+                create create-entity
+                {:position [:row :col]
+                 :terrain [:kind]
+                 :cell-bounds [:x :y :w :h]
+                 :actor [:kind]}
+                GRID-W GRID-H
+                (fn [world _create-entity row col]
+                  (let [[x y w h] (cell-bounds-at row col)
+                        kind (. terrain (cell-key row col))]
+                    (create-entity world [:position row col
+                                         :terrain kind
+                                         :cell-bounds x y w h]))))
+        world (. result :world)
+        cell-at (. result :cell-at)]
     (let [empties (empty-cells terrain GRID-W GRID-H)
           [monster-pos goal-pos] (pick-distinct-cells empties 2)
           monster-id (create-entity world [:position (. monster-pos :row) (. monster-pos :col)
@@ -161,19 +143,21 @@
        :grid-h GRID-H})))
 
 (fn create-game-from-terrain [terrain monster-pos goal-pos]
-  (let [world (create {:position [:row :col]
-                       :terrain [:kind]
-                       :cell-bounds [:x :y :w :h]
-                       :actor [:kind]})
-        cell-at {}]
-    (for [row 1 GRID-H]
-      (for [col 1 GRID-W]
-        (let [[x y w h] (cell-bounds-at row col)
-              kind (. terrain (cell-key row col))
-              id (create-entity world [:position row col
-                                       :terrain kind
-                                       :cell-bounds x y w h])]
-          (tset cell-at (cell-key row col) id))))
+  (let [result (grid.build-cell-grid
+                create create-entity
+                {:position [:row :col]
+                 :terrain [:kind]
+                 :cell-bounds [:x :y :w :h]
+                 :actor [:kind]}
+                GRID-W GRID-H
+                (fn [world _create-entity row col]
+                  (let [[x y w h] (cell-bounds-at row col)
+                        kind (. terrain (cell-key row col))]
+                    (create-entity world [:position row col
+                                         :terrain kind
+                                         :cell-bounds x y w h]))))
+        world (. result :world)
+        cell-at (. result :cell-at)]
     (let [monster-id (create-entity world [:position (. monster-pos :row) (. monster-pos :col)
                                            :actor :monster])
           goal-id (create-entity world [:position (. goal-pos :row) (. goal-pos :col)
@@ -203,4 +187,4 @@
  :create-game-world create-game-world
  :create-game-from-terrain create-game-from-terrain
  :flood-fill-reachable flood-fill-reachable
- :shuffle! shuffle!}
+ :shuffle! util.shuffle!}

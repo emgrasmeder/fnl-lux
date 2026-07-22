@@ -3,6 +3,7 @@
 (local world-mod (require :world))
 (local systems (require :systems))
 (local layout (require :layout))
+(local love-ui (require :shared.love-ui))
 
 (fn render-walls [game]
   (let [world game.world
@@ -15,58 +16,31 @@
                 components (get-table-by-id world entity-id)]
             (when components
               (let [[x y w h] components.cell-bounds]
-                (love.graphics.rectangle "fill" x y w h)))))))))
-
-(fn render-grid []
-  (let [ox world-mod.BOARD-OX
-        oy world-mod.BOARD-OY
-        size world-mod.CELL-SIZE
-        board-w (* world-mod.GRID-W size)
-        board-h (* world-mod.GRID-H size)]
-    (love.graphics.setColor 0.9 0.9 0.95 1)
-    (for [col 0 world-mod.GRID-W]
-      (love.graphics.line (+ ox (* col size)) oy (+ ox (* col size)) (+ oy board-h)))
-    (for [row 0 world-mod.GRID-H]
-      (love.graphics.line ox (+ oy (* row size)) (+ ox board-w) (+ oy (* row size))))))
+                (love-ui.fill-rect "fill" x y w h)))))))))
 
 (fn render-snake [body]
   (love.graphics.setColor 0.25 0.45 0.3 1)
-  (each [_ [x y w h] (ipairs (layout.segment-rects body))]
-    (love.graphics.rectangle "fill" x y w h)))
+  (love-ui.fill-rects (layout.segment-rects body)))
 
 (fn render-food [food-pos]
   (let [rect (layout.food-rect food-pos)]
     (when rect
-      (let [[x y w h] rect]
-        (love.graphics.setColor 1 1 1 1)
-        (love.graphics.rectangle "fill" x y w h)))))
+      (love.graphics.setColor 1 1 1 1)
+      (love-ui.fill-rects [rect]))))
 
 (fn render-score [state]
   (love.graphics.setColor 1 1 1 1)
   (love.graphics.print (.. "Score: " (systems.score state)) 8 8))
 
-(fn render-overlay [state]
-  (let [text (systems.overlay-text state)]
-    (when text
-      (let [font (love.graphics.getFont)
-            text-width (font:getWidth text)
-            text-height (font:getHeight)
-            screen-w (love.graphics.getWidth)
-            screen-h (love.graphics.getHeight)]
-        (love.graphics.setColor 0 0 0 0.5)
-        (love.graphics.rectangle "fill" 0 0 screen-w screen-h)
-        (love.graphics.setColor 1 1 1 1)
-        (love.graphics.print text
-                             (/ (- screen-w text-width) 2)
-                             (/ (- screen-h text-height) 2))))))
-
 (fn render [game state]
-  (love.graphics.clear 0.08 0.08 0.1 1)
+  (love-ui.clear-background)
   (render-walls game)
-  (render-grid)
+  (love-ui.render-line-grid world-mod.BOARD-OX world-mod.BOARD-OY
+                            world-mod.GRID-W world-mod.GRID-H world-mod.CELL-SIZE)
   (render-food (systems.get-food-position game))
   (render-snake state.body)
   (render-score state)
-  (render-overlay state))
+  (let [text (systems.overlay-text state)]
+    (when text (love-ui.render-message-overlay text))))
 
 {:render render}

@@ -26,8 +26,9 @@ local function lux_fennel_paths()
 end
 
 local fennel = require("fennel")
+-- Keep in sync with PRODUCTION-FENNEL-PATH in examples/shared/testing/startup.fnl
 fennel.install({
-  path = "./?.fnl;" .. lux_fennel_paths(),
+  path = "./?.fnl;../?.fnl;" .. lux_fennel_paths(),
   macroPath = "./?.fnlm",
 })
 

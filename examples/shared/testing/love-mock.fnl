@@ -45,10 +45,17 @@
 (fn uninstall! []
   (set _G.love saved-love))
 
+(fn clear-shared-modules! []
+  (each [name _ (pairs package.loaded)]
+    (when (and (= (type name) "string") (= (name:sub 1 7) "shared."))
+      (tset package.loaded name nil))))
+
 (fn clear-example-modules! []
   (each [_ name (ipairs EXAMPLE-MODULES)]
-    (tset package.loaded name nil)))
+    (tset package.loaded name nil))
+  (clear-shared-modules!))
 
 {:install! install!
  :uninstall! uninstall!
- :clear-example-modules! clear-example-modules!}
+ :clear-example-modules! clear-example-modules!
+ :clear-shared-modules! clear-shared-modules!}
