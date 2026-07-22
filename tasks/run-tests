@@ -22,3 +22,7 @@
 (let [(ok reason code) (values (os.execute "cd examples/game-menu && deps --profiles dev --no-prompt tasks/run-tests"))]
   (when (not ok)
     (error (.. "game-menu example tests failed (" reason " " code ")"))))
+
+(let [(ok reason code) (values (os.execute "cd examples/grid-chase && deps --profiles dev --no-prompt tasks/run-tests"))]
+  (when (not ok)
+    (error (.. "grid-chase example tests failed (" reason " " code ")"))))

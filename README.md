@@ -64,12 +64,13 @@ If you've installed the deps.fnl binary, you can run
 ```
 deps --profiles dev tasks/run-tests
 ```
-to run the Lux library tests and the [tic-tac-toe](examples/tic-tac-toe/) and [game-menu](examples/game-menu/) example tests. To run only a subset, pass test names as arguments (see fennel-test docs). Add new root tests to the list in the `run-tests` file; example tests live under each example's `tests/` directory.
+to run the Lux library tests and the [tic-tac-toe](examples/tic-tac-toe/), [game-menu](examples/game-menu/), and [grid-chase](examples/grid-chase/) example tests. To run only a subset, pass test names as arguments (see fennel-test docs). Add new root tests to the list in the `run-tests` file; example tests live under each example's `tests/` directory.
 
 ## Examples
 
 - [Tic-Tac-Toe Love2D](examples/tic-tac-toe/) — two-player tic-tac-toe using Lux ECS for the board
 - [Game Menu](examples/game-menu/) — Love2D menu with Play (beep) and Exit buttons using Lux ECS
+- [Grid Chase](examples/grid-chase/) — monster pathfinds to a moving goal on a wall-filled grid using A* and Lux ECS
 
 ##### Disclaimer
 I don't know how to make games, how to code in fennel, or how to build an ECS. I'm gratefully forking this repository from Benaiah so that I can add documentation for my own reference, and edit things in an attempt to understand them better.
