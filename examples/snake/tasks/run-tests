@@ -9,7 +9,7 @@
     _ default-tests))
 
 (local tests
-  [:startup-test :world-test :pathfinding-test :systems-test :layout-test])
+  [:startup-test :world-test :systems-test :layout-test :ui-test])
 
 (-> tests
     select-tests

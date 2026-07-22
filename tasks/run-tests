@@ -15,6 +15,15 @@
     select-tests
     run-tests)
 
+(local examples [:tic-tac-toe :game-menu :grid-chase :snake])
+
+(each [_ name (ipairs examples)]
+  (let [(ok reason code) (values (os.execute
+                                   (.. "cd examples/" name
+                                       " && deps --profiles dev --no-prompt tasks/run-tests startup-test")))]
+    (when (not ok)
+      (error (.. name " startup test failed (" reason " " code ")")))))
+
 (let [(ok reason code) (values (os.execute "cd examples/tic-tac-toe && deps --profiles dev --no-prompt tasks/run-tests"))]
   (when (not ok)
     (error (.. "tic-tac-toe example tests failed (" reason " " code ")"))))
@@ -26,3 +35,7 @@
 (let [(ok reason code) (values (os.execute "cd examples/grid-chase && deps --profiles dev --no-prompt tasks/run-tests"))]
   (when (not ok)
     (error (.. "grid-chase example tests failed (" reason " " code ")"))))
+
+(let [(ok reason code) (values (os.execute "cd examples/snake && deps --profiles dev --no-prompt tasks/run-tests"))]
+  (when (not ok)
+    (error (.. "snake example tests failed (" reason " " code ")"))))

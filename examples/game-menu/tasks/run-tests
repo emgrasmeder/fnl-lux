@@ -9,7 +9,7 @@
     _ default-tests))
 
 (local tests
-  [:world-test :systems-test :audio-test])
+  [:startup-test :world-test :systems-test :audio-test])
 
 (-> tests
     select-tests
