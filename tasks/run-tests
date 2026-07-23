@@ -15,7 +15,7 @@
     select-tests
     run-tests)
 
-(local examples [:tic-tac-toe :game-menu :grid-chase :snake])
+(local examples [:tic-tac-toe :game-menu :grid-chase :snake :keep-going-right])
 
 (each [_ name (ipairs examples)]
   (let [(ok reason code) (values (os.execute
@@ -39,3 +39,7 @@
 (let [(ok reason code) (values (os.execute "cd examples/snake && deps --profiles dev --no-prompt tasks/run-tests"))]
   (when (not ok)
     (error (.. "snake example tests failed (" reason " " code ")"))))
+
+(let [(ok reason code) (values (os.execute "cd examples/keep-going-right && deps --profiles dev --no-prompt tasks/run-tests"))]
+  (when (not ok)
+    (error (.. "keep-going-right example tests failed (" reason " " code ")"))))

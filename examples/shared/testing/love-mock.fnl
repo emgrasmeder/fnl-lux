@@ -1,5 +1,6 @@
 (local EXAMPLE-MODULES
-  [:world :systems :ui :audio :layout :pathfinding :main])
+  [:world :systems :ui :audio :layout :pathfinding :main
+   :constants :terrain :physics :camera])
 
 (var saved-love nil)
 
@@ -40,6 +41,7 @@
                                   (make-sound-data))}
           :audio {:newSource (fn [_data _kind] (make-source))}
           :mouse {:getPosition (fn [] 0 0)}
+          :keyboard {:isDown (fn [_] false)}
           :event {:quit noop}})))
 
 (fn uninstall! []

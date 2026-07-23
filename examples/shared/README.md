@@ -38,5 +38,6 @@ CI runs [`tests/example-coverage-test.fnl`](examples/shared/tests/example-covera
 | game-menu | | ✓ | ✓ | | ✓ |
 | grid-chase | ✓ | ✓ | ✓ | ✓ | ✓ |
 | snake | ✓ | ✓ | ✓ | ✓ | ✓ |
+| keep-going-right | | ✓ | | | |
 
-New Love2D examples should import from here before copying helpers. ECS core stays in `src/` — only game/example code lives here.
+New Love2D examples should import from here before copying helpers. ECS core stays in `src/` — only game/example code lives here. The platformer example uses continuous physics and does not use `shared.grid` or `shared.tick`.

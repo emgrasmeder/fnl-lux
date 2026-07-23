@@ -64,7 +64,7 @@ If you've installed the deps.fnl binary, you can run
 ```
 deps --profiles dev tasks/run-tests
 ```
-to run the Lux library tests and the [tic-tac-toe](examples/tic-tac-toe/), [game-menu](examples/game-menu/), [grid-chase](examples/grid-chase/), and [snake](examples/snake/) example tests. To run only a subset, pass test names as arguments (see fennel-test docs). Add new root tests to the list in the `run-tests` file; example tests live under each example's `tests/` directory.
+to run the Lux library tests and the [tic-tac-toe](examples/tic-tac-toe/), [game-menu](examples/game-menu/), [grid-chase](examples/grid-chase/), [snake](examples/snake/), and [keep-going-right](examples/keep-going-right/) example tests. To run only a subset, pass test names as arguments (see fennel-test docs). Add new root tests to the list in the `run-tests` file; example tests live under each example's `tests/` directory.
 
 Every Love2D example must include `tests/startup-test.fnl`, which smoke-tests `love.load`, optional `love.update`, and `love.draw` using a headless Love mock from [`examples/shared/testing/`](examples/shared/testing/) (no Love2D binary required in CI). Startup tests bootstrap Fennel with the same **production** paths as each example's `main.lua` (including `../?.fnl` for shared modules), not the deps dev profile alone.
 
@@ -84,6 +84,7 @@ Shared Love2D helpers live in [`examples/shared/`](examples/shared/) (grid math,
 - [Game Menu](examples/game-menu/) — Love2D menu with Play (beep) and Exit buttons using Lux ECS
 - [Grid Chase](examples/grid-chase/) — monster pathfinds to a moving goal on a wall-filled grid using A* and Lux ECS
 - [Snake](examples/snake/) — classic Snake with a controllable `:player` head entity, food, pause, and restart
+- [Keep Going Right](examples/keep-going-right/) — endless side-scrolling platformer with capsule physics, procedural terrain panes, and a Lux `:player` entity
 
 ##### Disclaimer
 I don't know how to make games, how to code in fennel, or how to build an ECS. I'm gratefully forking this repository from Benaiah so that I can add documentation for my own reference, and edit things in an attempt to understand them better.
