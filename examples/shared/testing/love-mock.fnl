@@ -1,6 +1,7 @@
 (local EXAMPLE-MODULES
   [:world :systems :ui :audio :layout :pathfinding :main
-   :constants :terrain :physics :camera])
+   :constants :terrain :physics :camera
+   :buildings :crane :cable :ball :spatial])
 
 (var saved-love nil)
 
@@ -34,6 +35,7 @@
                      :rectangle noop
                      :line noop
                      :circle noop
+                     :polygon noop
                      :print noop
                      :getFont (fn [] font)
                      :getWidth (fn [] screen-w)
