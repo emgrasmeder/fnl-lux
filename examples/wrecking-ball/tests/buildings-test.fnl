@@ -25,3 +25,12 @@
         (let [px (buildings.footprint-pixels fp)]
           (assert-is
            (not (buildings.in-exclusion-zone? (. px :x) (. px :y) (. px :w) (. px :h)))))))))
+
+(deftest footprint-on-ground-test
+  (testing "building bottoms sit on ground line"
+    (math.randomseed 42)
+    (let [{:footprints fps} (buildings.generate-buildings)]
+      (each [_ fp (ipairs fps)]
+        (let [px (buildings.footprint-pixels fp)
+              bottom (+ (. px :y) (. px :h))]
+          (assert-eq bottom c.GROUND-Y))))))

@@ -1,7 +1,7 @@
 (local EXAMPLE-MODULES
   [:world :systems :ui :audio :layout :pathfinding :main
-   :constants :terrain :physics :camera
-   :buildings :crane :cable :ball :spatial])
+   :constants :terrain :physics-world :camera
+   :buildings :crane])
 
 (var saved-love nil)
 
@@ -24,6 +24,78 @@
     (setmetatable data {:__index {:setSample noop}})
     data))
 
+(fn mock-world-points [state ...]
+  (let [px (. state :x)
+        py (. state :y)
+        args [...]
+        n (# args)
+        out []]
+    (var i 1)
+    (while (<= i n)
+      (table.insert out (+ px (. args i)))
+      (table.insert out (+ py (. args (+ i 1))))
+      (set i (+ i 2)))
+    (values (table.unpack out))))
+
+(fn make-body [x y]
+  (let [state {:x (or x 0) :y (or y 0) :angle 0 :destroyed false :user-data nil}
+        body {}]
+    (setmetatable body
+                  {:__index
+                   {:getX (fn [_] (. state :x))
+                    :getY (fn [_] (. state :y))
+                    :getAngle (fn [_] (. state :angle))
+                    :setAngle (fn [_ a] (tset state :angle a))
+                    :setAngularVelocity noop
+                    :setLinearVelocity noop
+                    :setPosition (fn [_ nx ny]
+                                   (tset state :x nx)
+                                   (tset state :y ny))
+                    :setFixedRotation noop
+                    :setBullet noop
+                    :setUserData (fn [_ d] (tset state :user-data d))
+                    :getUserData (fn [_] (. state :user-data))
+                    :isDestroyed (fn [_] (. state :destroyed))
+                    :destroy (fn [_] (tset state :destroyed true))
+                    :getWorldPoints (fn [_ ...] (mock-world-points state ...))}})
+    body))
+
+(fn make-world []
+  (let [world {}]
+    (setmetatable world {:__index {:update noop :destroy noop}})
+    world))
+
+(fn make-joint []
+  (let [joint {:destroyed false}]
+    (setmetatable joint
+                  {:__index
+                   {:setMotorEnabled noop
+                    :setMaxMotorTorque noop
+                    :setMotorSpeed noop
+                    :isDestroyed (fn [_] (. joint :destroyed))
+                    :destroy (fn [_] (tset joint :destroyed true))}})
+    joint))
+
+(fn make-fixture []
+  (let [fixture {}]
+    (setmetatable fixture
+                  {:__index
+                   {:setFriction noop
+                    :setRestitution noop
+                    :setFilterData noop}})
+    fixture))
+
+(fn make-shape [] {})
+
+(fn make-physics []
+  {:newWorld (fn [_gx _gy _sleep] (make-world))
+   :newBody (fn [_world x y _type] (make-body x y))
+   :newRectangleShape (fn [_ ...] (make-shape))
+   :newCircleShape (fn [_ ...] (make-shape))
+   :newFixture (fn [_body _shape _density] (make-fixture))
+   :newRevoluteJoint (fn [_a _b _x _y _collide] (make-joint))
+   :newRopeJoint (fn [_a _b _x1 _y1 _x2 _y2 _max _collide] (make-joint))})
+
 (fn install! []
   (set saved-love _G.love)
   (let [font (make-font)
@@ -45,7 +117,8 @@
           :audio {:newSource (fn [_data _kind] (make-source))}
           :mouse {:getPosition (fn [] 0 0)}
           :keyboard {:isDown (fn [_] false)}
-          :event {:quit noop}})))
+          :event {:quit noop}
+          :physics (make-physics)})))
 
 (fn uninstall! []
   (set _G.love saved-love))

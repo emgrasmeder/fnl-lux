@@ -13,10 +13,6 @@
    :world-test
    :buildings-test
    :crane-test
-   :cable-test
-   :collision-test
-   :physics-test
-   :spatial-test
    :systems-test])
 
 (-> tests

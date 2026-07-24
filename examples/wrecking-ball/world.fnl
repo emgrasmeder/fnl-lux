@@ -3,72 +3,50 @@
 (local create-entity (. world-api :create-entity))
 (local run-removals (. world-api :run-removals))
 (local buildings (require :buildings))
-(local c (require :constants))
-(local crane-mod (require :crane))
-(local ball-mod (require :ball))
+(local physics-world (require :physics-world))
 
 (local component-spec
-  {:position [:x :y]
-   :velocity [:vx :vy]
-   :rotation [:angle]
-   :angular-velocity [:omega]
-   :actor [:kind]
+  {:actor [:kind]
    :brick-hue [:h]})
 
-(fn spawn-brick! [world brick-ids spawn]
-  (let [id (create-entity world [:position (. spawn :x) (. spawn :y)
-                                 :velocity 0 0
-                                 :rotation 0
-                                 :angular-velocity 0
-                                 :actor :brick
+(fn spawn-brick! [game brick-ids spawn]
+  (let [world (. game :world)
+        id (create-entity world [:actor :brick
                                  :brick-hue (. spawn :hue)])]
+    (physics-world.spawn-brick! (. game :physics) (. spawn :x) (. spawn :y) (. spawn :hue) id)
     (table.insert brick-ids id)
     id))
 
-(fn clear-bricks! [world brick-ids]
+(fn clear-bricks! [game brick-ids]
+  (physics-world.clear-brick-bodies! (. game :physics))
   (when (> (# brick-ids) 0)
     (let [removals {}]
       (each [_ id (ipairs brick-ids)]
         (tset removals id true))
-      (run-removals world removals))))
+      (run-removals (. game :world) removals))))
 
-(fn spawn-buildings! [world brick-ids]
+(fn spawn-buildings! [game brick-ids]
   (let [{:spawns spawns} (buildings.generate-buildings)]
     (each [_ spawn (ipairs spawns)]
-      (spawn-brick! world brick-ids spawn))
+      (spawn-brick! game brick-ids spawn))
+    (physics-world.settle! (. game :physics))
     spawns))
 
 (fn create-game-world []
   (let [world (create component-spec)
         brick-ids []
-        crane-id (create-entity world [:position c.BASE-X c.BASE-Y
-                                       :velocity 0 0
-                                       :rotation 0
-                                       :angular-velocity 0
-                                       :actor :crane
-                                       :brick-hue 0])
-        ball-id (create-entity world [:position (. (ball-mod.initial-ball) :x)
-                                      (. (ball-mod.initial-ball) :y)
-                                      :velocity 0 0
-                                      :rotation 0
-                                      :angular-velocity 0
-                                      :actor :ball
-                                      :brick-hue 0])]
-    (spawn-buildings! world brick-ids)
-    {:world world
-     :brick-ids brick-ids
-     :crane-id crane-id
-     :ball-id ball-id
-     :spatial-grid {}}))
+        physics (physics-world.create!)]
+    (spawn-buildings! {:world world :physics physics :brick-ids brick-ids}
+                      brick-ids)
+    {:world world :brick-ids brick-ids :physics physics}))
 
 (fn reset-buildings! [game]
-  (clear-bricks! (. game :world) (. game :brick-ids))
+  (clear-bricks! game (. game :brick-ids))
   (tset game :brick-ids [])
-  (spawn-buildings! (. game :world) (. game :brick-ids)))
+  (spawn-buildings! game (. game :brick-ids)))
 
-(fn reset-crane-and-ball! [state]
-  (tset state :crane (crane-mod.initial-crane))
-  (tset state :ball (ball-mod.initial-ball)))
+(fn reset-crane-and-ball! [game]
+  (physics-world.reset-crane-and-ball! (. game :physics)))
 
 {:component-spec component-spec
  :create-game-world create-game-world

@@ -23,15 +23,17 @@
      :w (* (. footprint :w-bricks) bs)
      :h (* (. footprint :h-bricks) bs)}))
 
-(fn random-footprint [side rng-left rng-right rng-top rng-bottom]
+(fn footprint-y-on-ground [h-bricks]
+  (- c.GROUND-Y (* h-bricks c.BRICK-SIZE)))
+
+(fn random-footprint [side rng-left rng-right]
   (let [w (+ c.MIN-BUILDING-W-BRICKS
              (math.random (- c.MAX-BUILDING-W-BRICKS c.MIN-BUILDING-W-BRICKS 1)))
         h (+ c.MIN-BUILDING-H-BRICKS
              (math.random (- c.MAX-BUILDING-H-BRICKS c.MIN-BUILDING-H-BRICKS 1)))
         pw (* w c.BRICK-SIZE)
-        ph (* h c.BRICK-SIZE)
         x (+ rng-left (math.random (math.max 0 (- rng-right rng-left pw))))
-        y (+ rng-top (math.random (math.max 0 (- rng-bottom rng-top ph))))]
+        y (footprint-y-on-ground h)]
     {:side side :x x :y y :w-bricks w :h-bricks h}))
 
 (fn try-place-footprint [side placed]
@@ -41,13 +43,11 @@
         right-max (- c.WINDOW-W c.SIDE-MARGIN)
         [rng-left rng-right] (if (= side :left)
                                [left-min left-max]
-                               [right-min right-max])
-        rng-top 40
-        rng-bottom (- c.GROUND-Y (* c.MIN-BUILDING-H-BRICKS c.BRICK-SIZE))]
+                               [right-min right-max])]
     (var found nil)
     (for [attempt 1 40]
       (when (not found)
-        (let [fp (random-footprint side rng-left rng-right rng-top rng-bottom)
+        (let [fp (random-footprint side rng-left rng-right)
               px (footprint-pixels fp)]
           (var ok (not (in-exclusion-zone? (. px :x) (. px :y) (. px :w) (. px :h))))
           (each [_ other (ipairs placed)]
@@ -98,6 +98,7 @@
 {:rects-overlap? rects-overlap?
  :in-exclusion-zone? in-exclusion-zone?
  :footprint-pixels footprint-pixels
+ :footprint-y-on-ground footprint-y-on-ground
  :generate-buildings generate-buildings
  :count-bricks count-bricks
  :brick-spawns-for-footprint brick-spawns-for-footprint}
