@@ -33,6 +33,7 @@
                      :clear noop
                      :rectangle noop
                      :line noop
+                     :circle noop
                      :print noop
                      :getFont (fn [] font)
                      :getWidth (fn [] screen-w)

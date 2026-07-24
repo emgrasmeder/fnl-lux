@@ -1,6 +1,5 @@
 (local c (require :constants))
 (local love-ui (require :shared.love-ui))
-(local physics (require :physics))
 (local world-api (. (require :io.github.emgrasmeder.lux) :world))
 (local get-table-by-id (. world-api :get-table-by-id))
 
@@ -15,15 +14,11 @@
 (fn render-player [game cam-x]
   (let [components (get-table-by-id game.world game.player-id)]
     (when components
-      (let [x (- (. components.position 1) cam-x)
-            y (. components.position 2)
-            half (c.capsule-half-body)
-            label-x (- x 6)
-            label-y (- y half 6)
-            w 12
-            h 12]
+      (let [center-x (- (. components.position 1) cam-x)
+            center-y (. components.position 2)
+            feet-y (+ center-y (/ c.CAPSULE_H 2))]
         (love.graphics.setColor 1 1 1 1)
-        (love-ui.print-centered-in-rect "X" label-x label-y w h)))))
+        (love-ui.render-stick-figure center-x feet-y c.CAPSULE_H)))))
 
 (fn render [game _state]
   (love-ui.clear-background)

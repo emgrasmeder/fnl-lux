@@ -2,6 +2,7 @@
 
 (local {: run-tests}
   (require :io.gitlab.andreyorst.fennel-test))
+(local discover (require :shared.testing.discover))
 
 (fn select-tests [default-tests]
   (case [(select 1 ((or _G.unpack table.unpack) arg))]
@@ -9,37 +10,12 @@
     _ default-tests))
 
 (local tests
-  [:figuring-it-out :example-coverage-test])
+  [:figuring-it-out :example-coverage-test :all-examples-startup-test])
 
 (-> tests
     select-tests
     run-tests)
 
-(local examples [:tic-tac-toe :game-menu :grid-chase :snake :keep-going-right])
-
-(each [_ name (ipairs examples)]
-  (let [(ok reason code) (values (os.execute
-                                   (.. "cd examples/" name
-                                       " && deps --profiles dev --no-prompt tasks/run-tests startup-test")))]
-    (when (not ok)
-      (error (.. name " startup test failed (" reason " " code ")")))))
-
-(let [(ok reason code) (values (os.execute "cd examples/tic-tac-toe && deps --profiles dev --no-prompt tasks/run-tests"))]
-  (when (not ok)
-    (error (.. "tic-tac-toe example tests failed (" reason " " code ")"))))
-
-(let [(ok reason code) (values (os.execute "cd examples/game-menu && deps --profiles dev --no-prompt tasks/run-tests"))]
-  (when (not ok)
-    (error (.. "game-menu example tests failed (" reason " " code ")"))))
-
-(let [(ok reason code) (values (os.execute "cd examples/grid-chase && deps --profiles dev --no-prompt tasks/run-tests"))]
-  (when (not ok)
-    (error (.. "grid-chase example tests failed (" reason " " code ")"))))
-
-(let [(ok reason code) (values (os.execute "cd examples/snake && deps --profiles dev --no-prompt tasks/run-tests"))]
-  (when (not ok)
-    (error (.. "snake example tests failed (" reason " " code ")"))))
-
-(let [(ok reason code) (values (os.execute "cd examples/keep-going-right && deps --profiles dev --no-prompt tasks/run-tests"))]
-  (when (not ok)
-    (error (.. "keep-going-right example tests failed (" reason " " code ")"))))
+(each [_ name (ipairs (discover.love2d-example-dirs))]
+  (discover.run-example-shell! name
+    "deps --profiles dev --no-prompt tasks/run-tests"))
