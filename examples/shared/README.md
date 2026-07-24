@@ -15,7 +15,9 @@ The canonical production path string lives in [`testing/startup.fnl`](examples/s
 | Module                  | Require path                | Purpose                                                                                                         |
 |-------------------------|-----------------------------|-----------------------------------------------------------------------------------------------------------------|
 | `grid.fnl`              | `:shared.grid`              | Grid math (`pos-key`, `cell-bounds-at`, window size, `build-cell-grid`)                                         |
-| `love-ui.fnl`           | `:shared.love-ui`           | Love2D drawing primitives (background, line grid, filled rects, centered text, overlays, `render-stick-figure`) |
+| `love-ui.fnl`           | `:shared.love-ui`           | Love2D drawing primitives (background, line grid, filled rects, centered text, overlays)                        |
+| `character/render.fnl`  | `:shared.character.render`  | Stick figure drawing with walk-cycle leg poses                                                                    |
+| `character/walk.fnl`    | `:shared.character.walk`    | Walk phase accumulation and foot placement (`advance-walk-state`, `foot-positions`)                               |
 | `audio.fnl`             | `:shared.audio`             | Procedural tone generation (`make-tone`, `make-lazy-player`)                                                    |
 | `util.fnl`              | `:shared.util`              | `shuffle!`, `positions-equal?`, `point-in-rect?`                                                                |
 | `tick.fnl`              | `:shared.tick`              | Fixed-interval game step timer (`step-on-interval`)                                                             |
@@ -34,12 +36,12 @@ CI runs [`tests/example-coverage-test.fnl`](examples/shared/tests/example-covera
 
 ## Which examples use what
 
-| Example | grid | love-ui | util | tick | audio |
-|---|---|---|---|---|---|
+| Example | grid | love-ui | util | tick | audio | character |
+|---|---|---|---|---|---|---|
 | tic-tac-toe | ✓ | ✓ | ✓ | | |
 | game-menu | | ✓ | ✓ | | ✓ |
 | grid-chase | ✓ | ✓ | ✓ | ✓ | ✓ |
 | snake | ✓ | ✓ | ✓ | ✓ | ✓ |
-| keep-going-right | | ✓ | | | |
+| keep-going-right | | ✓ | | | | ✓ |
 
 New Love2D examples should import from here before copying helpers. ECS core stays in `src/` — only game/example code lives here. The platformer example uses continuous physics and does not use `shared.grid` or `shared.tick`.

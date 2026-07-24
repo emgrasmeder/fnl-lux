@@ -10,7 +10,7 @@
     _ default-tests))
 
 (local tests
-  [:figuring-it-out :example-coverage-test :all-examples-startup-test])
+  [:figuring-it-out :example-coverage-test :all-examples-startup-test :walk-test])
 
 (-> tests
     select-tests

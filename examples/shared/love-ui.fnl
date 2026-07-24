@@ -50,28 +50,10 @@
                          (/ (- screen-w text-width) 2)
                          (/ (- screen-h text-height) 2))))
 
-(fn render-stick-figure [feet-x feet-y height]
-  (let [leg-len (* height 0.22)
-        body-len (* height 0.28)
-        arm-len (* height 0.2)
-        head-r (* height 0.12)
-        hip-y (- feet-y leg-len)
-        shoulder-y (- hip-y body-len)
-        head-cy (- shoulder-y head-r)
-        arm-spread (* arm-len 0.85)
-        leg-spread (* leg-len 0.55)]
-    (love.graphics.line feet-x feet-y (- feet-x leg-spread) feet-y)
-    (love.graphics.line feet-x feet-y (+ feet-x leg-spread) feet-y)
-    (love.graphics.line feet-x hip-y feet-x shoulder-y)
-    (love.graphics.line feet-x shoulder-y (- feet-x arm-spread) (+ shoulder-y (* body-len 0.35)))
-    (love.graphics.line feet-x shoulder-y (+ feet-x arm-spread) (+ shoulder-y (* body-len 0.35)))
-    (love.graphics.circle "line" feet-x head-cy head-r)))
-
 {:clear-background clear-background
  :render-line-grid render-line-grid
  :render-tic-tac-toe-grid render-tic-tac-toe-grid
  :fill-rect fill-rect
  :fill-rects fill-rects
  :print-centered-in-rect print-centered-in-rect
- :render-message-overlay render-message-overlay
- :render-stick-figure render-stick-figure}
+ :render-message-overlay render-message-overlay}

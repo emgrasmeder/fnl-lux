@@ -15,6 +15,8 @@
 (local FLOOR_MAX (- PANE_H 60))
 (local CAMERA_LEAD (/ PANE_W 3))
 (local GROUND_EPSILON 2)
+(local WALK_STEP_PX 12)
+(local WALK_VX_EPSILON 5)
 
 (fn capsule-half-body []
   (- (/ CAPSULE_H 2) CAPSULE_R))
@@ -36,4 +38,6 @@
  :FLOOR_MAX FLOOR_MAX
  :CAMERA_LEAD CAMERA_LEAD
  :GROUND_EPSILON GROUND_EPSILON
+ :WALK_STEP_PX WALK_STEP_PX
+ :WALK_VX_EPSILON WALK_VX_EPSILON
  :capsule-half-body capsule-half-body}

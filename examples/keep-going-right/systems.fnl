@@ -4,6 +4,7 @@
 (local c (require :constants))
 (local physics (require :physics))
 (local camera (require :camera))
+(local walk (require :shared.character.walk))
 
 (fn key-held? [key]
   (let [is-down (when (and _G.love _G.love.keyboard)
@@ -34,7 +35,8 @@
                 :grounded {game.player-id [grounded?]}}))
 
 (fn initial-state []
-  {:jump-request false})
+  {:jump-request false
+   :walk (walk.initial-walk-state)})
 
 (fn on-key [state key]
   (when (= key "space")
@@ -56,7 +58,9 @@
           grounded (physics.collide-capsule pos vel segments)]
       (tset pos :x (camera.clamp-player-x (. pos :x) game.cam-state.world-min-x))
       (sync-player! game pos vel grounded)
-      (camera.update-camera! game.cam-state (. pos :x)))))
+      (camera.update-camera! game.cam-state (. pos :x))
+      (tset state :walk (walk.advance-walk-state state.walk (. vel :vx) grounded dt
+                                                   c.WALK_STEP_PX c.WALK_VX_EPSILON)))))
 
 {:initial-state initial-state
  :step step
