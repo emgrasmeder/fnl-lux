@@ -68,7 +68,7 @@ to run the Lux library tests and **all** Love2D examples under [`examples/`](exa
 
 Root [`all-examples-startup-test`](examples/shared/tests/all-examples-startup-test.fnl) runs `startup-test` in every discovered example (folders with `main.fnl` and `main.lua`, excluding `shared`). Root [`tasks/run-tests`](tasks/run-tests) then runs each example.
 
-Every Love2D example must include `tests/startup-test.fnl`, which smoke-tests `love.load`, optional `love.update`, and `love.draw` using a headless Love mock from [`examples/shared/testing/`](examples/shared/testing/) (no Love2D binary required in CI). Startup tests bootstrap Fennel with the same **production** paths as each example's `main.lua` (including `../?.fnl` for shared modules), not the deps dev profile alone.
+Every Love2D example must include `tests/startup-test.fnl`, which smoke-tests `love.load`, optional `love.update`, and `love.draw` using a headless Love mock from [`examples/shared/testing/`](examples/shared/testing/) (no Love2D binary required for that step). **`./scripts/ci-test.sh`** also runs Love golden-image tests for the shared stick figure ([`examples/shared/character/visual/`](examples/shared/character/visual/)) inside the CI container (Love + xvfb). Committed PNG fixtures are captured on **Linux in that image**; refresh them with `UPDATE_VISUAL_FIXTURES=1` via the same podman environment when leg art changes.
 
 When adding a new Love2D example:
 

@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM --platform=linux/amd64 ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LUAROCKS_VERSION=3.13.0
@@ -15,7 +15,25 @@ RUN apt-get update && apt-get install -y \
     unzip \
     lua5.4 \
     liblua5.4-dev \
+    lua5.1 \
+    liblua5.1-0-dev \
+    xvfb \
+    libgl1 \
+    libopenal1 \
+    libvorbis0a \
+    libtheora0 \
+    libmodplug1 \
+    fuse \
+    libfuse2t64 \
     && rm -rf /var/lib/apt/lists/*
+
+# Love 11.5 Linux x86_64 AppImage (official release; no .deb for 11.5)
+ENV LOVE_VERSION=11.5
+RUN curl -fsSL -o /usr/local/bin/love-appimage \
+    "https://github.com/love2d/love/releases/download/${LOVE_VERSION}/love-${LOVE_VERSION}-x86_64.AppImage" \
+    && chmod +x /usr/local/bin/love-appimage \
+    && printf '%s\n' '#!/bin/sh' 'exec /usr/local/bin/love-appimage --appimage-extract-and-run "$@"' > /usr/local/bin/love \
+    && chmod +x /usr/local/bin/love
 
 RUN curl -fsSL "https://luarocks.org/releases/luarocks-${LUAROCKS_VERSION}.tar.gz" \
     | tar xz -C /tmp \

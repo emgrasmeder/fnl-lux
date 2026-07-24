@@ -45,3 +45,40 @@ CI runs [`tests/example-coverage-test.fnl`](examples/shared/tests/example-covera
 | keep-going-right | | ✓ | | | | ✓ |
 
 New Love2D examples should import from here before copying helpers. ECS core stays in `src/` — only game/example code lives here. The platformer example uses continuous physics and does not use `shared.grid` or `shared.tick`.
+
+## Character preview (interactive)
+
+Manual Love window at [`character/preview/`](examples/shared/character/preview/) to watch the shared stick figure and walk cycle. Use this when you want to see the character; use [`character/visual/`](examples/shared/character/visual/) for automated golden PNG tests; use [`keep-going-right`](../keep-going-right/) for the full platformer with the same renderer.
+
+**Run (needs [Love 11+](https://love2d.org/) on PATH):**
+
+```bash
+cd examples/shared/character/preview
+deps --lua-version 5.1 --no-prompt
+love .
+# or: ./tasks/run-preview
+```
+
+Hold **A/D** or arrow keys to walk; **Escape** quits.
+
+## Character visual golden tests
+
+Headless Love harness at [`character/visual/`](examples/shared/character/visual/) renders four isolated stick-figure poses and pixel-compares them to PNGs in [`character/visual/fixtures/`](examples/shared/character/visual/fixtures/). The window is hidden and the process exits after compare — not for manual viewing (see **Character preview** above).
+
+**Run (needs [Love 11+](https://love2d.org/) on PATH):**
+
+```bash
+cd examples/shared/character/visual
+deps --lua-version 5.1 --no-prompt
+./tasks/run-visual-tests
+```
+
+**Refresh baselines** (use the podman CI image so goldens match Linux CI):
+
+```bash
+podman run --rm -v "$PWD:/work:Z" -w /work -e UPDATE_VISUAL_FIXTURES=1 -e DEPS_NO_PROMPT=true \
+  fnl-lux-ci:local bash -lc 'cd examples/shared/character/visual && deps --lua-version 5.1 --no-prompt && ./tasks/run-visual-tests'
+```
+
+(`./scripts/ci-test.sh` runs these automatically after the Fennel test suite.)
+
