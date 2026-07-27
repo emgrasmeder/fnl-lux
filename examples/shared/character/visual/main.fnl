@@ -1,5 +1,5 @@
 (local character-render (require :shared.character.render))
-(local compare (require :compare))
+(local compare (require :shared.testing.visual-compare))
 
 (local CANVAS-W 160)
 (local CANVAS-H 200)

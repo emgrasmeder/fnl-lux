@@ -15,4 +15,7 @@
         (assert-is (discover.has-example-tasks? example)
                    (.. example " must have tasks/run-tests"))
         (assert-is (discover.has-example-deps? example)
-                   (.. example " must have deps.fnl"))))))
+                   (.. example " must have deps.fnl"))
+        (when (not (discover.visual-exempt? example))
+          (assert-is (discover.has-visual-harness? example)
+                     (.. example " must have visual/tasks/run-visual-tests (or be visual-exempt)")))))))

@@ -40,6 +40,22 @@
 (fn has-example-deps? [example]
   (file-exists? (.. "examples/" example "/deps.fnl")))
 
+(local VISUAL-EXEMPT-EXAMPLES
+  {:keep-going-right true})
+
+(fn has-visual-harness? [example]
+  (file-exists? (.. "examples/" example "/visual/tasks/run-visual-tests")))
+
+(fn visual-exempt? [example]
+  (not= nil (. VISUAL-EXEMPT-EXAMPLES example)))
+
+(fn visual-example-dirs []
+  (let [dirs []]
+    (each [_ name (ipairs (love2d-example-dirs))]
+      (when (has-visual-harness? name)
+        (table.insert dirs name)))
+    dirs))
+
 (fn run-example-shell! [name shell-cmd]
   (let [cmd (.. "cd examples/" name " && " shell-cmd)
         (ok reason code) (values (os.execute cmd))]
@@ -53,4 +69,7 @@
  :valid-main-lua? valid-main-lua?
  :has-example-tasks? has-example-tasks?
  :has-example-deps? has-example-deps?
+ :has-visual-harness? has-visual-harness?
+ :visual-exempt? visual-exempt?
+ :visual-example-dirs visual-example-dirs
  :run-example-shell! run-example-shell!}

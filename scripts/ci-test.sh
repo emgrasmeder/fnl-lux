@@ -11,4 +11,4 @@ podman run --rm \
   -w /work \
   -e DEPS_NO_PROMPT=true \
   "$IMAGE" \
-  bash -lc 'deps --profiles dev --no-prompt tasks/run-tests && cd examples/shared/character/visual && deps --lua-version 5.1 --no-prompt && ./tasks/run-visual-tests'
+  bash -lc 'deps --profiles dev --no-prompt tasks/run-tests && bash examples/shared/testing/run-all-visual-tests.sh'

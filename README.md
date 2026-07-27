@@ -68,13 +68,14 @@ to run the Lux library tests and **all** Love2D examples under [`examples/`](exa
 
 Root [`all-examples-startup-test`](examples/shared/tests/all-examples-startup-test.fnl) runs `startup-test` in every discovered example (folders with `main.fnl` and `main.lua`, excluding `shared`). Root [`tasks/run-tests`](tasks/run-tests) then runs each example.
 
-Every Love2D example must include `tests/startup-test.fnl`, which smoke-tests `love.load`, optional `love.update`, and `love.draw` using a headless Love mock from [`examples/shared/testing/`](examples/shared/testing/) (no Love2D binary required for that step). **`./scripts/ci-test.sh`** also runs Love golden-image tests for the shared stick figure ([`examples/shared/character/visual/`](examples/shared/character/visual/)) inside the CI container (Love + xvfb). Committed PNG fixtures are captured on **Linux in that image**; refresh them with `UPDATE_VISUAL_FIXTURES=1` via the same podman environment when leg art changes.
+Every Love2D example must include `tests/startup-test.fnl`, which smoke-tests `love.load`, optional `love.update`, and `love.draw` using a headless Love mock from [`examples/shared/testing/`](examples/shared/testing/) (no Love2D binary required for that step). **`./scripts/ci-test.sh`** runs fennel-test, then Love golden-image tests via [`examples/shared/testing/run-all-visual-tests.sh`](examples/shared/testing/run-all-visual-tests.sh) (character stick figure plus each example’s `visual/` harness; Love + xvfb in CI). Committed PNG fixtures should be captured in the **Linux podman CI image** when possible; refresh with `UPDATE_VISUAL_FIXTURES=1` (see [`examples/shared/README.md`](examples/shared/README.md)).
 
 When adding a new Love2D example:
 
 1. Include `../?.fnl` in `main.lua` fennel `path` (keep in sync with `PRODUCTION-FENNEL-PATH` in [`examples/shared/testing/startup.fnl`](examples/shared/testing/startup.fnl))
 2. Add `tests/startup-test.fnl` calling `(require :shared.testing.startup)` / `startup.run!`
 3. Add `deps.fnl`, `tasks/run-tests`, and the usual `main.fnl` / `main.lua` / `conf.lua` under `examples/<name>/`
+4. Add `visual/` golden tests (see shared README) unless the example is on the visual-exempt list (`keep-going-right` only)
 
 Discovery picks up the new folder automatically. Root [`example-coverage-test`](examples/shared/tests/example-coverage-test.fnl) enforces the startup and bootstrap checklist in CI.
 

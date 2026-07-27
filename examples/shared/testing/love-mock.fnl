@@ -4,6 +4,9 @@
    :buildings :crane :scoring])
 
 (var saved-love nil)
+(var mouse-x 0)
+(var mouse-y 0)
+(var keys-down {})
 
 (fn noop [] nil)
 
@@ -120,13 +123,25 @@
           :sound {:newSoundData (fn [_sample-count _rate _bits _channels]
                                   (make-sound-data))}
           :audio {:newSource (fn [_data _kind] (make-source))}
-          :mouse {:getPosition (fn [] 0 0)}
-          :keyboard {:isDown (fn [_] false)}
+          :mouse {:getPosition (fn [] mouse-x mouse-y)}
+          :keyboard {:isDown (fn [key] (. keys-down key))}
           :event {:quit noop}
           :physics (make-physics)})))
 
 (fn uninstall! []
   (set _G.love saved-love))
+
+(fn set-mouse! [x y]
+  (set mouse-x x)
+  (set mouse-y y))
+
+(fn set-keys-down! [key down?]
+  (tset keys-down key down?))
+
+(fn clear-input! []
+  (set mouse-x 0)
+  (set mouse-y 0)
+  (set keys-down {}))
 
 (fn clear-shared-modules! []
   (each [name _ (pairs package.loaded)]
@@ -140,5 +155,8 @@
 
 {:install! install!
  :uninstall! uninstall!
+ :set-mouse! set-mouse!
+ :set-keys-down! set-keys-down!
+ :clear-input! clear-input!
  :clear-example-modules! clear-example-modules!
  :clear-shared-modules! clear-shared-modules!}

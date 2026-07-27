@@ -21,9 +21,28 @@ The canonical production path string lives in [`testing/startup.fnl`](examples/s
 | `audio.fnl`             | `:shared.audio`             | Procedural tone generation (`make-tone`, `make-lazy-player`)                                                    |
 | `util.fnl`              | `:shared.util`              | `shuffle!`, `positions-equal?`, `point-in-rect?`                                                                |
 | `tick.fnl`              | `:shared.tick`              | Fixed-interval game step timer (`step-on-interval`)                                                             |
-| `testing/love-mock.fnl` | `:shared.testing.love-mock` | Headless Love2D stub for CI                                                                                     |
+| `testing/love-mock.fnl` | `:shared.testing.love-mock` | Headless Love2D stub for CI (configurable mouse/keyboard)                                                      |
+| `testing/visual-compare.fnl` | `:shared.testing.visual-compare` | PNG fixture load/save and pixel compare for Love golden tests                                           |
 | `testing/discover.fnl`  | `:shared.testing.discover`  | Discover Love2D example dirs; run per-example shell commands                                                    |
 | `testing/startup.fnl`   | `:shared.testing.startup`   | Smoke-test `love.load` / `love.update` / `love.draw` using production fennel paths                              |
+
+## Testing layers
+
+1. **Unit tests (fennel-test, no Love binary)** — Game logic in `systems.fnl` / `world.fnl`; input as coordinates or keys. Run via each example’s `tasks/run-tests` or root `deps --profiles dev tasks/run-tests`.
+2. **Startup smoke (`love-mock`)** — Every example’s `tests/startup-test.fnl` calls `shared.testing.startup/run!` to load `main.fnl` headlessly.
+3. **Golden renders (Love + hidden window)** — Each game example (except shared-renderer exempt `keep-going-right`) has `visual/` with scenario-driven `ui.render` and PNG fixtures. Shared compare helpers live in [`testing/visual-compare.fnl`](examples/shared/testing/visual-compare.fnl). CI runs [`testing/run-all-visual-tests.sh`](examples/shared/testing/run-all-visual-tests.sh) after fennel-test (Love + xvfb in the container; native macOS falls back to plain `love` when xvfb is unavailable).
+
+**Run all visual tests locally:**
+
+```bash
+bash examples/shared/testing/run-all-visual-tests.sh
+```
+
+**Refresh PNG baselines** (prefer Linux podman CI image so pixels match CI):
+
+```bash
+UPDATE_VISUAL_FIXTURES=1 bash examples/shared/testing/run-all-visual-tests.sh
+```
 
 ## New Love2D example checklist
 
@@ -31,6 +50,7 @@ The canonical production path string lives in [`testing/startup.fnl`](examples/s
 2. Add `tests/startup-test.fnl` that calls `startup.run!`
 3. Add `deps.fnl` and `tasks/run-tests` under `examples/<name>/`
 4. Provide `main.fnl` and `main.lua` (required for auto-discovery)
+5. Add `visual/` golden harness unless **visual-exempt** (`keep-going-right` only — use `shared/character/visual/` for the stick figure)
 
 CI runs [`tests/example-coverage-test.fnl`](examples/shared/tests/example-coverage-test.fnl) for policy checks and [`tests/all-examples-startup-test.fnl`](examples/shared/tests/all-examples-startup-test.fnl) to smoke-test startup in every discovered example.
 
