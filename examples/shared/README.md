@@ -65,7 +65,7 @@ CI runs [`tests/example-coverage-test.fnl`](examples/shared/tests/example-covera
 | snake | ✓ | ✓ | ✓ | ✓ | ✓ |
 | keep-going-right | | ✓ | | | | ✓ |
 
-New Love2D examples should import from here before copying helpers. ECS core stays in [`src/`](../../src/) — prefer `(require :io.github.emgrasmeder.lux.world)` for the world API in game code (same as `(. (require :io.github.emgrasmeder.lux) :world)`). Only game/example code lives here. The platformer example uses continuous physics and does not use `shared.grid` or `shared.tick`.
+New Love2D examples should import from here before copying helpers. ECS core stays in [`src/`](../../src/) — prefer `(require :io.github.emgrasmeder.lux.world)` for the world API in game code (implemented in [`lux/world.fnl`](../../src/io/github/emgrasmeder/lux/world.fnl); the package entry [`lux/init.fnl`](../../src/io/github/emgrasmeder/lux/init.fnl) re-exports the same API as `:world` and flat `:world/*` keys). Only game/example code lives here. The platformer example uses continuous physics and does not use `shared.grid` or `shared.tick`.
 
 ## Character preview (interactive)
 
