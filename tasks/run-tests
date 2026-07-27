@@ -10,7 +10,7 @@
     _ default-tests))
 
 (local tests
-  [:figuring-it-out :example-coverage-test :all-examples-startup-test
+  [:figuring-it-out :lux-world-select-test :example-coverage-test :all-examples-startup-test
    :walk-test :grid-test :util-test :tick-test])
 
 (-> tests

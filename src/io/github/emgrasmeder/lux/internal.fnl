@@ -35,14 +35,9 @@
 
 (fn all [list fun]
   (var result true)
-  (var done false)
-  (var i 1)
-  (while (and result (not done))
-    (local el (. list i))
+  (each [_ el (ipairs list)]
     (when (not (fun el))
-      (set result false)
-      (set done true))
-    (set i (+ i 1)))
+      (set result false)))
   result)
 
 (fn any [list fun]
