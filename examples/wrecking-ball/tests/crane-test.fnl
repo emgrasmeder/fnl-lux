@@ -20,3 +20,8 @@
       (assert-is (= (type angle) "number"))
       (assert-is (> angle (- math.pi)))
       (assert-is (< angle math.pi)))))
+
+(deftest reach-constants-test
+  (testing "arm plus max chain exceeds worst building reach"
+    (local buildings (require :buildings))
+    (assert-is (>= (buildings.crane-max-reach) (buildings.worst-case-reach-needed)))))

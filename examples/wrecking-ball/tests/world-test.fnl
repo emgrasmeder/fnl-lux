@@ -10,19 +10,21 @@
 (deftest create-game-world-test
   (testing "create-game-world"
     (math.randomseed 5)
-    (let [game (world.create-game-world)]
+    (let [game (world.create-game-world 5)]
       (assert-is (. game :world))
       (assert-is (. game :physics))
+      (assert-is (. game :score))
       (assert-is (> (# (. game :brick-ids)) 0))
       (assert-is (<= (# (. game :brick-ids)) c.MAX-BRICKS)))))
 
 (deftest brick-components-test
-  (testing "brick entities are hue-only metadata"
+  (testing "brick entities carry color and building metadata"
     (math.randomseed 5)
-    (let [game (world.create-game-world)
+    (let [game (world.create-game-world 5)
           id (. (. game :brick-ids) 1)
           comp (get-table-by-id (. game :world) id)]
       (assert-eq :brick (. comp.actor 1))
-      (assert-is (. comp.brick-hue 1))
+      (assert-is (. comp.brick-color 1))
+      (assert-is (. comp.brick-meta 1))
       (assert-is (not comp.position))
       (assert-is (not comp.velocity)))))

@@ -20,4 +20,7 @@
   (ui.render sim-game sim))
 
 (fn love.keypressed [key]
-  (systems.on-key sim key))
+  (systems.on-key sim-game sim key))
+
+(fn love.wheelmoved [_x y]
+  (systems.on-wheel sim-game sim y))

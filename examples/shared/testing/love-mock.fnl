@@ -1,7 +1,7 @@
 (local EXAMPLE-MODULES
   [:world :systems :ui :audio :layout :pathfinding :main
    :constants :terrain :physics-world :camera
-   :buildings :crane])
+   :buildings :crane :scoring])
 
 (var saved-love nil)
 
@@ -53,6 +53,8 @@
                                    (tset state :y ny))
                     :setFixedRotation noop
                     :setBullet noop
+                    :setGravityScale noop
+                    :setAngularDamping noop
                     :setUserData (fn [_ d] (tset state :user-data d))
                     :getUserData (fn [_] (. state :user-data))
                     :isDestroyed (fn [_] (. state :destroyed))
@@ -66,12 +68,14 @@
     world))
 
 (fn make-joint []
-  (let [joint {:destroyed false}]
+  (let [joint {:destroyed false :max-length 100}]
     (setmetatable joint
                   {:__index
                    {:setMotorEnabled noop
                     :setMaxMotorTorque noop
                     :setMotorSpeed noop
+                    :setMaxLength (fn [_ len] (tset joint :max-length len))
+                    :getMaxLength (fn [_] (. joint :max-length))
                     :isDestroyed (fn [_] (. joint :destroyed))
                     :destroy (fn [_] (tset joint :destroyed true))}})
     joint))
@@ -109,6 +113,7 @@
                      :circle noop
                      :polygon noop
                      :print noop
+                     :setLineWidth noop
                      :getFont (fn [] font)
                      :getWidth (fn [] screen-w)
                      :getHeight (fn [] screen-h)}
