@@ -1,6 +1,7 @@
-(local world-api (. (require :io.github.emgrasmeder.lux) :world))
-(local create (. world-api :create))
-(local create-entity (. world-api :create-entity))
+(local world (require :io.github.emgrasmeder.lux.world))
+(local create (. world :create))
+(local create-entity (. world :create-entity))
+(local get-table-by-id (. world :get-table-by-id))
 (local grid (require :shared.grid))
 (local util (require :shared.util))
 
@@ -102,8 +103,7 @@
 
 (fn terrain-from-game [game]
   (let [world game.world
-        cell-at game.cell-at
-        get-table-by-id (. world-api :get-table-by-id)]
+        cell-at game.cell-at]
     (var terrain {})
     (each [key entity-id (pairs cell-at)]
       (let [components (get-table-by-id world entity-id)]

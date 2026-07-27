@@ -4,11 +4,8 @@
 
 (local world (require :world))
 (local systems (require :systems))
-(local world-api (. (require :io.github.emgrasmeder.lux) :world))
-(local get-table-by-id (. world-api :get-table-by-id))
-
-(fn entity-components [game entity-id]
-  (get-table-by-id game.world entity-id))
+(local lux-world (require :io.github.emgrasmeder.lux.world))
+(local get-table-by-id (. lux-world :get-table-by-id))
 
 (fn count-keys [t]
   (var n 0)
@@ -41,7 +38,7 @@
   (testing "cell components"
     (let [game (world.create-game-world)
           entity-id (. game.cell-at (world.cell-key 1 1))
-          components (entity-components game entity-id)
+          components (get-table-by-id game.world entity-id)
           [x y w h] components.cell-bounds]
       (assert-eq world.board-ox x)
       (assert-eq world.board-oy y)

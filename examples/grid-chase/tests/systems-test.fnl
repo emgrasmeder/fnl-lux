@@ -4,8 +4,8 @@
 
 (local world (require :world))
 (local systems (require :systems))
-(local world-api (. (require :io.github.emgrasmeder.lux) :world))
-(local run-updates (. world-api :run-updates))
+(local lux-world (require :io.github.emgrasmeder.lux.world))
+(local run-updates (. lux-world :run-updates))
 
 (fn empty-terrain []
   (var terrain {})

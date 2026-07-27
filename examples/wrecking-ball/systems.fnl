@@ -1,6 +1,6 @@
 (local world-mod (require :world))
-(local world-api (. (require :io.github.emgrasmeder.lux) :world))
-(local run-removals (. world-api :run-removals))
+(local world (require :io.github.emgrasmeder.lux.world))
+(local run-removals (. world :run-removals))
 (local c (require :constants))
 (local crane-mod (require :crane))
 (local physics-world (require :physics-world))

@@ -23,7 +23,7 @@
         (when (not ok) (print err))
         ok)))
 
-(fn make-loop [scenarios render-scenario!]
+(fn make-loop [scenarios render-scenario! on_load]
   (var cli-update? false)
   (var exit-code 0)
   (var processed? false)
@@ -32,14 +32,19 @@
                 (love.graphics.setDefaultFilter "nearest" "nearest")
                 (each [_ a (ipairs (or args []))]
                   (when (= a "--update-fixtures")
-                    (set cli-update? true))))
+                    (set cli-update? true)))
+                (when on_load (on_load args)))
    :love.draw (fn []
                 (when (not processed?)
                   (set processed? true)
                   (each [_ scenario (ipairs scenarios)]
-                    (let [name (. scenario :name)
-                          actual (render-scenario! scenario)]
-                      (when (and actual (not (compare-or-save! actual name (update-mode? cli-update?))))
+                    (let [(ok err) (pcall (fn []
+                                            (let [name (. scenario :name)
+                                                  actual (render-scenario! scenario)]
+                                              (when (and actual (not (compare-or-save! actual name (update-mode? cli-update?))))
+                                                (set exit-code 1)))))]
+                      (when (not ok)
+                        (print err)
                         (set exit-code 1))))
                   (love.event.quit exit-code)))})
 

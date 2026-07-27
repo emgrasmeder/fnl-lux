@@ -1,5 +1,5 @@
-(local world-api (. (require :io.github.emgrasmeder.lux) :world))
-(local get-table-by-id (. world-api :get-table-by-id))
+(local world (require :io.github.emgrasmeder.lux.world))
+(local get-table-by-id (. world :get-table-by-id))
 (local world-mod (require :world))
 (local systems (require :systems))
 (local layout (require :layout))

@@ -1,16 +1,13 @@
-(local world-api (. (require :io.github.emgrasmeder.lux) :world))
-(local get-table-by-id (. world-api :get-table-by-id))
+(local world (require :io.github.emgrasmeder.lux.world))
+(local get-table-by-id (. world :get-table-by-id))
 (local util (require :shared.util))
-
-(fn entity-components [world entity-id]
-  (get-table-by-id world entity-id))
 
 (fn hit-test-at [menu mx my]
   (let [world menu.world
         button-ids menu.button-ids]
     (var result nil)
     (each [_ id (ipairs button-ids)]
-      (let [components (entity-components world id)]
+      (let [components (get-table-by-id world id)]
         (when components
           (let [[x y w h] components.button]
             (when (util.point-in-rect? mx my x y w h)
@@ -29,7 +26,7 @@
     :exit ((. callbacks :exit))))
 
 (fn action-for-entity [world entity-id]
-  (let [components (entity-components world entity-id)]
+  (let [components (get-table-by-id world entity-id)]
     (when components (. components.action 1))))
 
 (fn activate-entity [world entity-id callbacks]

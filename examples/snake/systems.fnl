@@ -1,6 +1,6 @@
-(local world-api (. (require :io.github.emgrasmeder.lux) :world))
-(local get-table-by-id (. world-api :get-table-by-id))
-(local run-updates (. world-api :run-updates))
+(local world (require :io.github.emgrasmeder.lux.world))
+(local get-table-by-id (. world :get-table-by-id))
+(local run-updates (. world :run-updates))
 (local world-mod (require :world))
 (local tick (require :shared.tick))
 

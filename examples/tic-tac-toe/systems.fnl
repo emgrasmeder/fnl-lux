@@ -1,6 +1,6 @@
-(local world-api (. (require :io.github.emgrasmeder.lux) :world))
-(local get-table-by-id (. world-api :get-table-by-id))
-(local run-updates (. world-api :run-updates))
+(local world (require :io.github.emgrasmeder.lux.world))
+(local get-table-by-id (. world :get-table-by-id))
+(local run-updates (. world :run-updates))
 (local world-mod (require :world))
 (local util (require :shared.util))
 
@@ -87,9 +87,6 @@
           (set full false))))
     (and full (not (winner game)))))
 
-(fn entity-components [world entity-id]
-  (get-table-by-id world entity-id))
-
 (fn hit-test-at [game mx my]
   (let [world game.world
         cell-at game.cell-at]
@@ -97,7 +94,7 @@
     (for [row 1 3]
       (for [col 1 3]
         (let [entity-id (. cell-at (world-mod.cell-key row col))
-              components (entity-components world entity-id)]
+              components (get-table-by-id world entity-id)]
           (when (and components (not result))
             (let [[x y w h] components.cell-bounds]
               (when (util.point-in-rect? mx my x y w h)

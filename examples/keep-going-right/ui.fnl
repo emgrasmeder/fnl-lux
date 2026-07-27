@@ -2,8 +2,8 @@
 (local love-ui (require :shared.love-ui))
 (local character-render (require :shared.character.render))
 (local walk (require :shared.character.walk))
-(local world-api (. (require :io.github.emgrasmeder.lux) :world))
-(local get-table-by-id (. world-api :get-table-by-id))
+(local world (require :io.github.emgrasmeder.lux.world))
+(local get-table-by-id (. world :get-table-by-id))
 
 (fn render-terrain [game cam-x]
   (love.graphics.setColor 0.9 0.9 0.95 1)

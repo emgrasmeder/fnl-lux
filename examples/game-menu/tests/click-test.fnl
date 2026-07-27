@@ -4,8 +4,8 @@
 
 (local world (require :world))
 (local systems (require :systems))
-(local world-api (. (require :io.github.emgrasmeder.lux) :world))
-(local get-table-by-id (. world-api :get-table-by-id))
+(local lux-world (require :io.github.emgrasmeder.lux.world))
+(local get-table-by-id (. lux-world :get-table-by-id))
 
 (fn fresh-menu []
   (world.create-menu-world))

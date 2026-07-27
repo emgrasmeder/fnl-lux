@@ -3,8 +3,8 @@
  :io.gitlab.andreyorst.fennel-test)
 
 (local world (require :world))
-(local world-api (. (require :io.github.emgrasmeder.lux) :world))
-(local get-table-by-id (. world-api :get-table-by-id))
+(local lux-world (require :io.github.emgrasmeder.lux.world))
+(local get-table-by-id (. lux-world :get-table-by-id))
 
 (fn count-walls [game]
   (var n 0)

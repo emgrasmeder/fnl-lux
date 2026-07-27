@@ -1,6 +1,6 @@
-(local world-api (. (require :io.github.emgrasmeder.lux) :world))
-(local create (. world-api :create))
-(local create-entity (. world-api :create-entity))
+(local world (require :io.github.emgrasmeder.lux.world))
+(local create (. world :create))
+(local create-entity (. world :create-entity))
 (local grid (require :shared.grid))
 (local util (require :shared.util))
 

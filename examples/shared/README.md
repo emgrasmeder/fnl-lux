@@ -23,6 +23,7 @@ The canonical production path string lives in [`testing/startup.fnl`](examples/s
 | `tick.fnl`              | `:shared.tick`              | Fixed-interval game step timer (`step-on-interval`)                                                             |
 | `testing/love-mock.fnl` | `:shared.testing.love-mock` | Headless Love2D stub for CI (configurable mouse/keyboard)                                                      |
 | `testing/visual-compare.fnl` | `:shared.testing.visual-compare` | PNG fixture load/save and pixel compare for Love golden tests                                           |
+| `testing/visual-runner.fnl` | `:shared.testing.visual-runner` | Shared `love.load` / `love.draw` harness for game `visual/` golden tests (`make-loop`, canvas capture) |
 | `testing/discover.fnl`  | `:shared.testing.discover`  | Discover Love2D example dirs; run per-example shell commands                                                    |
 | `testing/startup.fnl`   | `:shared.testing.startup`   | Smoke-test `love.load` / `love.update` / `love.draw` using production fennel paths                              |
 
@@ -30,7 +31,7 @@ The canonical production path string lives in [`testing/startup.fnl`](examples/s
 
 1. **Unit tests (fennel-test, no Love binary)** — Game logic in `systems.fnl` / `world.fnl`; input as coordinates or keys. Run via each example’s `tasks/run-tests` or root `deps --profiles dev tasks/run-tests`.
 2. **Startup smoke (`love-mock`)** — Every example’s `tests/startup-test.fnl` calls `shared.testing.startup/run!` to load `main.fnl` headlessly.
-3. **Golden renders (Love + hidden window)** — Each game example (except shared-renderer exempt `keep-going-right`) has `visual/` with scenario-driven `ui.render` and PNG fixtures. Shared compare helpers live in [`testing/visual-compare.fnl`](examples/shared/testing/visual-compare.fnl). CI runs [`testing/run-all-visual-tests.sh`](examples/shared/testing/run-all-visual-tests.sh) after fennel-test (Love + xvfb in the container; native macOS falls back to plain `love` when xvfb is unavailable).
+3. **Golden renders (Love + hidden window)** — Each game example (except shared-renderer exempt `keep-going-right`) has `visual/` with scenario-driven renders and PNG fixtures. Implement `visual/main.fnl` with `:shared.testing.visual-runner` (`make-loop`, `capture-window`, `finish-capture`); compare helpers live in [`testing/visual-compare.fnl`](examples/shared/testing/visual-compare.fnl). CI runs [`testing/run-all-visual-tests.sh`](examples/shared/testing/run-all-visual-tests.sh) after fennel-test (Love + xvfb in the container; native macOS falls back to plain `love` when xvfb is unavailable).
 
 **Run all visual tests locally:**
 
@@ -64,7 +65,7 @@ CI runs [`tests/example-coverage-test.fnl`](examples/shared/tests/example-covera
 | snake | ✓ | ✓ | ✓ | ✓ | ✓ |
 | keep-going-right | | ✓ | | | | ✓ |
 
-New Love2D examples should import from here before copying helpers. ECS core stays in `src/` — only game/example code lives here. The platformer example uses continuous physics and does not use `shared.grid` or `shared.tick`.
+New Love2D examples should import from here before copying helpers. ECS core stays in [`src/`](../../src/) — prefer `(require :io.github.emgrasmeder.lux.world)` for the world API in game code (same as `(. (require :io.github.emgrasmeder.lux) :world)`). Only game/example code lives here. The platformer example uses continuous physics and does not use `shared.grid` or `shared.tick`.
 
 ## Character preview (interactive)
 

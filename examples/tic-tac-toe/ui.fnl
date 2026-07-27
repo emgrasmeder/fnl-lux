@@ -1,11 +1,8 @@
-(local world-api (. (require :io.github.emgrasmeder.lux) :world))
-(local get-table-by-id (. world-api :get-table-by-id))
+(local world (require :io.github.emgrasmeder.lux.world))
+(local get-table-by-id (. world :get-table-by-id))
 (local world-mod (require :world))
 (local systems (require :systems))
 (local love-ui (require :shared.love-ui))
-
-(fn entity-components [world entity-id]
-  (get-table-by-id world entity-id))
 
 (fn render-mark [x y w h mark]
   (when (or (= mark :X) (= mark :O))
@@ -18,7 +15,7 @@
     (for [row 1 3]
       (for [col 1 3]
         (let [entity-id (. cell-at (world-mod.cell-key row col))
-              components (entity-components world entity-id)]
+              components (get-table-by-id world entity-id)]
           (when components
             (let [[x y w h] components.cell-bounds
                   mark (. components.mark 1)]

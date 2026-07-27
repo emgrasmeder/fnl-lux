@@ -11,7 +11,7 @@ run_one() {
     return 1
   fi
   echo "== visual tests: $dir"
-  (cd "$dir" && deps --lua-version 5.1 --no-prompt && ./tasks/run-visual-tests)
+  (cd "$dir" && deps --lua-version 5.1 --no-prompt -e "nil" >/dev/null && ./tasks/run-visual-tests)
 }
 
 run_one "examples/shared/character/visual"

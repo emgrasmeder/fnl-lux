@@ -1,11 +1,8 @@
-(local world-api (. (require :io.github.emgrasmeder.lux) :world))
-(local get-table-by-id (. world-api :get-table-by-id))
+(local world (require :io.github.emgrasmeder.lux.world))
+(local get-table-by-id (. world :get-table-by-id))
 (local world-mod (require :world))
 (local systems (require :systems))
 (local love-ui (require :shared.love-ui))
-
-(fn entity-components [world entity-id]
-  (get-table-by-id world entity-id))
 
 (fn render-walls [game]
   (let [world game.world
@@ -14,7 +11,7 @@
     (for [row 1 game.grid-h]
       (for [col 1 game.grid-w]
         (let [entity-id (. cell-at (world-mod.cell-key row col))
-              components (entity-components world entity-id)]
+              components (get-table-by-id world entity-id)]
           (when (and components (= (. components.terrain 1) :wall))
             (let [[x y w h] components.cell-bounds]
               (love-ui.fill-rect "fill" x y w h))))))))
@@ -25,8 +22,8 @@
         goal-pos (systems.get-actor-position game game.goal-id)
         monster-cell (. game.cell-at (world-mod.cell-key (. monster-pos :row) (. monster-pos :col)))
         goal-cell (. game.cell-at (world-mod.cell-key (. goal-pos :row) (. goal-pos :col)))
-        monster-bounds (entity-components world monster-cell)
-        goal-bounds (entity-components world goal-cell)]
+        monster-bounds (get-table-by-id world monster-cell)
+        goal-bounds (get-table-by-id world goal-cell)]
     (love.graphics.setColor 1 1 1 1)
     (when monster-bounds
       (let [[x y w h] monster-bounds.cell-bounds]
