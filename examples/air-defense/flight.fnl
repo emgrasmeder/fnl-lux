@@ -43,6 +43,26 @@
 (fn desired-heading-away [x y tx ty]
   (normalize-angle (+ (desired-heading-to x y tx ty) math.pi)))
 
+(fn plane-off-screen? [x y]
+  (or (< x 0)
+      (> x c.WINDOW-W)
+      (< y 0)
+      (>= y c.GROUND-Y)))
+
+(fn edge-avoidance-heading [x y]
+  (let [m c.PLANE-EDGE-MARGIN
+        x-min m
+        x-max (- c.WINDOW-W m)
+        y-min m]
+    (var dx 0)
+    (var dy 0)
+    (when (< x x-min) (set dx (+ dx (- x-min x))))
+    (when (> x x-max) (set dx (- dx (- x x-max))))
+    (when (< y y-min) (set dy (+ dy (- y-min y))))
+    (if (or (not= dx 0) (not= dy 0))
+        (math.atan dy dx)
+        nil)))
+
 {:normalize-angle normalize-angle
  :angle-diff angle-diff
  :turn-toward turn-toward
@@ -51,4 +71,6 @@
  :integrate-wreck integrate-wreck
  :dist dist
  :desired-heading-to desired-heading-to
- :desired-heading-away desired-heading-away}
+ :desired-heading-away desired-heading-away
+ :plane-off-screen? plane-off-screen?
+ :edge-avoidance-heading edge-avoidance-heading}

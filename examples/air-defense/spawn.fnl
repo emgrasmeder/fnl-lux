@@ -5,13 +5,26 @@
 (local c (require :constants))
 (local flight (require :flight))
 
+(fn plane-alive? [comps]
+  (and comps (= (. comps.actor 1) :plane)
+       (> (. comps.hp 1) 0)
+       (not= (. comps.plane-ai 1) :wreck)))
+
+(fn count-alive-planes [w]
+  (let [ids (select-entities w [:actor :team :hp :plane-ai])]
+    (var n 0)
+    (each [_ id (ipairs ids)]
+      (let [comps (get-table-by-id w id)]
+        (when (plane-alive? comps)
+          (set n (+ n 1)))))
+    n))
+
 (fn count-team [w team-kind]
   (let [ids (select-entities w [:actor :team :hp :position])]
     (var n 0)
     (each [_ id (ipairs ids)]
       (let [comps (get-table-by-id w id)]
-        (when (and comps (= (. comps.actor 1) :plane) (= (. comps.team 1) team-kind)
-                   (> (. comps.hp 1) 0) (not= (. comps.plane-ai 1) :wreck))
+        (when (and (plane-alive? comps) (= (. comps.team 1) team-kind))
           (set n (+ n 1)))))
     n))
 
@@ -48,11 +61,14 @@
       {:x -40 :y (+ 80 (* (math.random) (- c.GROUND-Y 160))) :heading 0}
       {:x (+ c.WINDOW-W 40) :y (+ 80 (* (math.random) (- c.GROUND-Y 160))) :heading math.pi}))
 
-(fn random-onscreen-inbound-spawn []
+(fn random-sky-spawn []
   (let [x (+ 160 (* (math.random) (- c.WINDOW-W 320)))
         y (+ 80 (* (math.random) (- c.GROUND-Y 160)))
         heading (flight.desired-heading-to x y c.TURRET-X (- c.GROUND-Y 120))]
     {:x x :y y :heading heading}))
+
+(fn random-onscreen-inbound-spawn []
+  (random-sky-spawn))
 
 (fn spawn-grey-lane! [w]
   (let [from-left (> (math.random) 0.5)
@@ -79,31 +95,14 @@
   (for [i 1 c.GREY-TARGET]
     (spawn-grey-lane! w)))
 
-(fn maintain-spawns! [w state dt]
-  (tset state :spawn-timer (- (. state :spawn-timer) dt))
-  (tset state :grey-spawn-timer (- (. state :grey-spawn-timer) dt))
-  (when (<= (. state :spawn-timer) 0)
-    (tset state :spawn-timer c.SPAWN-INTERVAL)
-    (let [reds (count-team w :red)
-          greens (count-team w :green)]
-      (when (< reds c.RED-MIN)
-        (let [s (random-edge-spawn)]
-          (spawn-plane! w :red (. s :x) (. s :y) (. s :heading))))
-      (when (< greens c.GREEN-MIN)
-        (let [s (random-edge-spawn)]
-          (spawn-plane! w :green (. s :x) (. s :y) (. s :heading))))
-      (when (and (< reds c.RED-MAX) (> (math.random) 0.55))
-        (let [s (random-edge-spawn)]
-          (spawn-plane! w :red (. s :x) (. s :y) (. s :heading))))
-      (when (and (< greens c.GREEN-MAX) (> (math.random) 0.6))
-        (let [s (random-edge-spawn)]
-          (spawn-plane! w :green (. s :x) (. s :y) (. s :heading))))))
-  (when (<= (. state :grey-spawn-timer) 0)
-    (tset state :grey-spawn-timer c.GREY-SPAWN-INTERVAL)
-    (when (< (count-grey-crossing w) c.GREY-TARGET)
-      (spawn-grey-lane! w))))
+(fn maintain-spawns! [_w _state _dt]
+  ;; Round uses finite initial seed only; mid-round refill moves to next-round logic.
+  nil)
 
-{:count-team count-team
+{:plane-alive? plane-alive?
+ :count-alive-planes count-alive-planes
+ :count-team count-team
+ :random-sky-spawn random-sky-spawn
  :spawn-plane! spawn-plane!
  :seed-initial-air! seed-initial-air!
  :maintain-spawns! maintain-spawns!}

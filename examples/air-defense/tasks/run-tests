@@ -9,7 +9,8 @@
     _ default-tests))
 
 (local tests
-  [:startup-test :world-test :ai-evade-test])
+  [:startup-test :world-test :ai-evade-test :flight-bounds-test :plane-bounds-test
+   :round-end-test :turret-target-test])
 
 (-> tests
     select-tests

@@ -83,6 +83,17 @@
     (when (and comps (= (. comps.team 1) :red) (> (. comps.hp 1) 0))
       (apply-plane-damage! game w plane-id (. comps.hp 1) {:kind :turret} stats))))
 
+(fn crash-plane-into-ground! [game w plane-id stats]
+  (let [comps (get-table-by-id w plane-id)]
+    (when (and comps (= (. comps.actor 1) :plane) (> (. comps.hp 1) 0)
+               (not= (. comps.plane-ai 1) :wreck))
+      (when (= (. comps.team 1) :red)
+        (stats-mod.record-red-killed! stats))
+      (let [[vx vy] comps.velocity]
+        (run-updates w {:hp {plane-id [0]}
+                        :plane-ai {plane-id [:wreck 0 0 0]}
+                        :velocity {plane-id [vx vy]}})))))
+
 (fn turret-aim-nearest [w turret-x turret-y]
   (ai.nearest-red w turret-x turret-y))
 
@@ -209,18 +220,21 @@
             (tset removals pid true)))))))
 
 (fn buildings-alive? [game w]
-  (var any false)
+  (var found false)
+  (var any-alive false)
   (each [_ bid (ipairs (. game :building-ids))]
+    (set found true)
     (let [b (get-table-by-id w bid)]
       (when (and b (> (. b.hp 1) 0))
-        (set any true))))
-  any)
+        (set any-alive true))))
+  (or (not found) any-alive))
 
 {:spawn-bullet! spawn-bullet!
  :spawn-missile! spawn-missile!
  :fire-turret! fire-turret!
  :try-plane-fire! try-plane-fire!
  :apply-plane-damage! apply-plane-damage!
+ :crash-plane-into-ground! crash-plane-into-ground!
  :enter-evade-after-hit! enter-evade-after-hit!
  :bullet-hits bullet-hits
  :missile-hits missile-hits

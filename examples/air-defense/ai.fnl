@@ -115,9 +115,7 @@
     (if (and (= mode :evade) (> evade-timer 0))
         (let [desired (or (evade-desired-heading game w px py flee-id) heading)]
           {:mode :evade :target flee-id :aux evade-timer :desired desired})
-        (if (or (< px -80) (> px (+ c.WINDOW-W 80)))
-            {:mode :done :target 0 :aux 0 :desired heading}
-            {:mode :grey_cross :target 0 :aux aux :desired heading}))))
+        {:mode :grey_cross :target 0 :aux aux :desired heading})))
 
 (fn turn-rate-for [team]
   (case team

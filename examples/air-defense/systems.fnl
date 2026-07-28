@@ -43,18 +43,24 @@
                         :green c.GREEN-SPEED
                         _ c.GREY-SPEED)
                 turn (ai.turn-rate-for team)
-                integ (flight.integrate-alive px py heading speed turn desired dt)
-                comps* (combat.get-table-by-id w pid)
-                new-fire (if (not= team :grey)
-                           (combat.try-plane-fire! w pid comps* (. state :stats) dt)
-                           (- fire dt))
-                out-mode (. ai-result :mode)
-                out-target (. ai-result :target)
-                out-aux (ai.tick-evade-timer out-mode (. ai-result :aux) dt)]
-            (tset pos-up pid [(. integ :x) (. integ :y)])
-            (tset vel-up pid [(. integ :vx) (. integ :vy)])
-            (tset head-up pid [(. integ :heading)])
-            (tset ai-up pid [out-mode out-target new-fire out-aux])))))))
+                bounds-h (flight.edge-avoidance-heading px py)
+                desired* (or bounds-h desired)
+                integ (flight.integrate-alive px py heading speed turn desired* dt)
+                crash? (>= (. integ :y) c.GROUND-Y)]
+            (if crash?
+                (combat.crash-plane-into-ground! game w pid (. state :stats))
+                (do
+                  (let [comps* (combat.get-table-by-id w pid)
+                        new-fire (if (not= team :grey)
+                                   (combat.try-plane-fire! w pid comps* (. state :stats) dt)
+                                   (- fire dt))
+                        out-mode (. ai-result :mode)
+                        out-target (. ai-result :target)
+                        out-aux (ai.tick-evade-timer out-mode (. ai-result :aux) dt)]
+                    (tset pos-up pid [(. integ :x) (. integ :y)])
+                    (tset vel-up pid [(. integ :vx) (. integ :vy)])
+                    (tset head-up pid [(. integ :heading)])
+                    (tset ai-up pid [out-mode out-target new-fire out-aux]))))))))))
 
 (fn step-planes [game w state dt]
   (let [pos-up {}
@@ -67,6 +73,32 @@
     (when (next vel-up) (combat.run-updates w {:velocity vel-up}))
     (when (next head-up) (combat.run-updates w {:heading head-up}))
     (when (next ai-up) (combat.run-updates w {:plane-ai ai-up}))))
+
+(fn step-reposition-offscreen-planes! [w]
+  (let [pos-up {}
+        vel-up {}
+        head-up {}]
+    (each [_ pid (ipairs (combat.select-entities w [:actor :team :position :velocity :heading :hp :plane-ai]))]
+      (let [comps (combat.get-table-by-id w pid)]
+        (when (spawn.plane-alive? comps)
+          (let [[px py] comps.position]
+            (when (flight.plane-off-screen? px py)
+              (let [team (. comps.team 1)
+                    s (spawn.random-sky-spawn)
+                    x (. s :x)
+                    y (. s :y)
+                    heading (. s :heading)
+                    speed (case team
+                            :red c.RED-SPEED
+                            :green c.GREEN-SPEED
+                            _ c.GREY-SPEED)
+                    [vx vy] (flight.heading-to-velocity heading speed)]
+                (tset pos-up pid [x y])
+                (tset vel-up pid [vx vy])
+                (tset head-up pid [heading])))))))
+    (when (next pos-up) (combat.run-updates w {:position pos-up}))
+    (when (next vel-up) (combat.run-updates w {:velocity vel-up}))
+    (when (next head-up) (combat.run-updates w {:heading head-up}))))
 
 (fn step-bullets [w dt removals]
   (var pos-up {})
@@ -96,6 +128,7 @@
         removals {}]
     (spawn.maintain-spawns! w state dt)
     (step-planes game w state dt)
+    (step-reposition-offscreen-planes! w)
     (step-turret game w dt state)
     (step-bullets w dt removals)
     (missiles.step-salvo-timers state dt)
@@ -104,14 +137,12 @@
     (combat.bullet-hits game w (. state :stats) removals)
     (combat.missile-hits game w (. state :stats) removals)
     (combat.wreck-collisions game w (. state :stats) removals)
-    (each [_ pid (ipairs (combat.select-entities w [:actor :plane-ai]))]
-      (let [comps (combat.get-table-by-id w pid)]
-        (when (and comps (= (. comps.plane-ai 1) :done))
-          (tset removals pid true))))
     (combat.run-removals w removals)
     (tset state :time-left (- (. state :time-left) dt))
     (when (not (combat.buildings-alive? game w))
       (enter-summary! state :loss))
+    (when (and (= (. state :phase) :playing) (= (spawn.count-alive-planes w) 0))
+      (enter-summary! state :win))
     (when (and (= (. state :phase) :playing) (<= (. state :time-left) 0))
       (enter-summary! state :win))))
 
