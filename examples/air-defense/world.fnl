@@ -11,6 +11,8 @@
    :heading [:rad]
    :hp [:n]
    :team [:kind]
+   ;; :plane-ai — :strafe uses target-id=building, aux-id=building track;
+   ;; :evade uses target-id=flee entity (0=turret), aux-id=seconds remaining
    :plane-ai [:mode :target-id :fire-timer :aux-id]
    :projectile-meta [:owner :damage :ttl :lock-id]
    :turret-state [:fire-timer :aim-rad]})

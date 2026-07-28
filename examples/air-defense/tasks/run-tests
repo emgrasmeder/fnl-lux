@@ -9,7 +9,7 @@
     _ default-tests))
 
 (local tests
-  [:startup-test :world-test])
+  [:startup-test :world-test :ai-evade-test])
 
 (-> tests
     select-tests

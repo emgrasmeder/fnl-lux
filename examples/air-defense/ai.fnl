@@ -4,6 +4,21 @@
 (local c (require :constants))
 (local flight (require :flight))
 
+(fn threat-position [game w flee-id]
+  (if (and flee-id (> flee-id 0))
+      (let [t (get-table-by-id w flee-id)]
+        (when t (. t :position)))
+      (let [tid (. game :turret-id)
+            t (get-table-by-id w tid)]
+        (when t (. t :position)))))
+
+(fn evade-desired-heading [game w px py flee-id]
+  (let [pos (threat-position game w flee-id)]
+    (if pos
+        (let [[tx ty] pos]
+          (flight.desired-heading-away px py tx ty))
+        nil)))
+
 (fn pick-strafe-building [game w plane-id]
   (let [comps (get-table-by-id w plane-id)]
     (when comps
@@ -43,58 +58,66 @@
             (set best id))))))
   best)
 
+(fn green-hunt-target [w px py]
+  (or (find-intercept-red w) (nearest-red w px py)))
+
+(fn strafe-building-desired [px py aux-id w]
+  (let [b (get-table-by-id w aux-id)]
+    (if (or (not b) (<= (. b.hp 1) 0))
+        nil
+        (let [[bx by] b.position
+              d-to-building (flight.dist px py bx by)]
+          (if (< d-to-building 90)
+              (flight.desired-heading-to px py bx (+ by 40))
+              (flight.desired-heading-to px py bx (- by 120)))))))
+
 (fn step-red-ai [game w plane-id comps _dt]
   (let [[px py] comps.position
-        [mode target _fire aux] comps.plane-ai
+        [mode target _fire evade-timer] comps.plane-ai
         heading (. comps.heading 1)]
     (if (= mode :wreck)
         {:mode :wreck :target 0 :aux 0 :desired heading}
-        (do
-          (var new-mode mode)
-          (var new-target target)
-          (var new-aux aux)
-          (var desired heading)
-          (when (or (= mode :hunt) (and (= mode :strafe) (= target 0)))
-            (let [bid (pick-strafe-building game w plane-id)]
-              (when bid
-                (set new-mode :strafe)
-                (set new-target bid)
-                (set new-aux bid))))
-          (if (and (= new-mode :strafe) (> new-aux 0))
-              (let [b (get-table-by-id w new-aux)]
-                (if (or (not b) (<= (. b.hp 1) 0))
-                    (set desired heading)
-                    (let [[bx by] b.position
-                          d-to-building (flight.dist px py bx by)]
-                      (set desired (if (< d-to-building 90)
-                                     (flight.desired-heading-to px py bx (+ by 40))
-                                     (flight.desired-heading-to px py bx (- by 120)))))))
-              (let [nid (nearest-red w px py)]
-                (when nid
-                  (let [t (get-table-by-id w nid)
-                        [tx ty] t.position]
-                    (set desired (flight.desired-heading-to px py tx ty))))))
-          {:mode new-mode :target new-target :aux new-aux :desired desired}))))
+        (if (and (= mode :evade) (> evade-timer 0))
+            (let [desired (or (evade-desired-heading game w px py target) heading)]
+              {:mode :evade :target target :aux evade-timer :desired desired})
+            (do
+              (var new-mode :strafe)
+              (var new-target 0)
+              (var new-aux 0)
+              (var desired heading)
+              (let [bid (pick-strafe-building game w plane-id)]
+                (when bid
+                  (set new-target bid)
+                  (set new-aux bid)))
+              (let [strafe-h (strafe-building-desired px py new-aux w)]
+                (when strafe-h (set desired strafe-h)))
+              {:mode new-mode :target new-target :aux new-aux :desired desired})))))
 
-(fn step-green-ai [w plane-id comps _dt]
+(fn step-green-ai [game w plane-id comps _dt]
   (let [[px py] comps.position
+        [mode flee-id _fire evade-timer] comps.plane-ai
         heading (. comps.heading 1)
-        intercept (find-intercept-red w)
-        target (or intercept (nearest-red w px py))
-        desired (if target
-                  (let [t (get-table-by-id w target)
-                        [tx ty] t.position]
-                    (flight.desired-heading-to px py tx ty))
-                  heading)]
-    {:mode :hunt :target (or target 0) :aux 0 :desired desired}))
+        hunt (green-hunt-target w px py)]
+    (if (and (= mode :evade) (> evade-timer 0))
+        (let [desired (or (evade-desired-heading game w px py flee-id) heading)]
+          {:mode :evade :target flee-id :aux evade-timer :desired desired})
+        (let [desired (if hunt
+                        (let [t (get-table-by-id w hunt)
+                              [tx ty] t.position]
+                          (flight.desired-heading-to px py tx ty))
+                        heading)]
+          {:mode :hunt :target 0 :aux 0 :desired desired}))))
 
-(fn step-grey-ai [comps]
-  (let [[px _py] comps.position
-        [mode _target _fire _aux] comps.plane-ai
+(fn step-grey-ai [game w comps]
+  (let [[px py] comps.position
+        [mode flee-id _fire evade-timer aux] comps.plane-ai
         heading (. comps.heading 1)]
-    (if (or (< px -80) (> px (+ c.WINDOW-W 80)))
-        {:mode :done :target 0 :aux 0 :desired heading}
-        {:mode mode :target 0 :aux 0 :desired heading})))
+    (if (and (= mode :evade) (> evade-timer 0))
+        (let [desired (or (evade-desired-heading game w px py flee-id) heading)]
+          {:mode :evade :target flee-id :aux evade-timer :desired desired})
+        (if (or (< px -80) (> px (+ c.WINDOW-W 80)))
+            {:mode :done :target 0 :aux 0 :desired heading}
+            {:mode :grey_cross :target 0 :aux aux :desired heading}))))
 
 (fn turn-rate-for [team]
   (case team
@@ -102,8 +125,17 @@
     :green c.GREEN-TURN-RATE
     _ 1.8))
 
+(fn tick-evade-timer [mode aux dt]
+  (if (and (= mode :evade) (> aux 0))
+      (math.max 0 (- aux dt))
+      aux))
+
 {:step-red-ai step-red-ai
  :step-green-ai step-green-ai
  :step-grey-ai step-grey-ai
  :nearest-red nearest-red
+ :green-hunt-target green-hunt-target
+ :evade-desired-heading evade-desired-heading
+ :threat-position threat-position
+ :tick-evade-timer tick-evade-timer
  :turn-rate-for turn-rate-for}

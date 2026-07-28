@@ -35,8 +35,8 @@
         (when (and (not= mode :wreck) (> (. comps.hp 1) 0))
           (let [ai-result (case team
                             :red (ai.step-red-ai game w pid comps dt)
-                            :green (ai.step-green-ai w pid comps dt)
-                            _ (ai.step-grey-ai comps))
+                            :green (ai.step-green-ai game w pid comps dt)
+                            _ (ai.step-grey-ai game w comps))
                 desired (. ai-result :desired)
                 speed (case team
                         :red c.RED-SPEED
@@ -47,11 +47,14 @@
                 comps* (combat.get-table-by-id w pid)
                 new-fire (if (not= team :grey)
                            (combat.try-plane-fire! w pid comps* (. state :stats) dt)
-                           (- fire dt))]
+                           (- fire dt))
+                out-mode (. ai-result :mode)
+                out-target (. ai-result :target)
+                out-aux (ai.tick-evade-timer out-mode (. ai-result :aux) dt)]
             (tset pos-up pid [(. integ :x) (. integ :y)])
             (tset vel-up pid [(. integ :vx) (. integ :vy)])
             (tset head-up pid [(. integ :heading)])
-            (tset ai-up pid [(. ai-result :mode) (. ai-result :target) new-fire (. ai-result :aux)])))))))
+            (tset ai-up pid [out-mode out-target new-fire out-aux])))))))
 
 (fn step-planes [game w state dt]
   (let [pos-up {}

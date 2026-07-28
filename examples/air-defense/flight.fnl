@@ -40,6 +40,9 @@
 (fn desired-heading-to [x y tx ty]
   (math.atan (- ty y) (- tx x)))
 
+(fn desired-heading-away [x y tx ty]
+  (normalize-angle (+ (desired-heading-to x y tx ty) math.pi)))
+
 {:normalize-angle normalize-angle
  :angle-diff angle-diff
  :turn-toward turn-toward
@@ -47,4 +50,5 @@
  :integrate-alive integrate-alive
  :integrate-wreck integrate-wreck
  :dist dist
- :desired-heading-to desired-heading-to}
+ :desired-heading-to desired-heading-to
+ :desired-heading-away desired-heading-away}
