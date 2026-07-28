@@ -67,9 +67,9 @@
         nil
         (let [[bx by] b.position
               d-to-building (flight.dist px py bx by)]
-          (if (< d-to-building 90)
-              (flight.desired-heading-to px py bx (+ by 40))
-              (flight.desired-heading-to px py bx (- by 120)))))))
+          (if (< d-to-building c.STRAFE-CLOSE-DIST)
+              (flight.desired-heading-to px py bx (+ by c.STRAFE-APPROACH-Y-NEAR))
+              (flight.desired-heading-to px py bx (+ by c.STRAFE-APPROACH-Y-FAR)))))))
 
 (fn step-red-ai [game w plane-id comps _dt]
   (let [[px py] comps.position
@@ -131,6 +131,7 @@
 {:step-red-ai step-red-ai
  :step-green-ai step-green-ai
  :step-grey-ai step-grey-ai
+ :strafe-building-desired strafe-building-desired
  :nearest-red nearest-red
  :green-hunt-target green-hunt-target
  :evade-desired-heading evade-desired-heading

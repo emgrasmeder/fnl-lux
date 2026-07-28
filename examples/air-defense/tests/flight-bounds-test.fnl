@@ -21,3 +21,9 @@
     (let [h (flight.edge-avoidance-heading 400 30)]
       (assert-is h)
       (assert-is (> (math.sin h) 0.3)))))
+
+(deftest edge-avoidance-near-ground-steers-up-test
+  (testing "near ground band steers upward in screen coords"
+    (let [h (flight.edge-avoidance-heading 400 (- c.GROUND-Y 40))]
+      (assert-is h)
+      (assert-is (< (math.sin h) -0.3)))))

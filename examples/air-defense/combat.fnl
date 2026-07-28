@@ -151,7 +151,7 @@
                    (spawn-bullet! w bx by bvx bvy :red c.BULLET-DMG plane-id)
                    (set new-fire c.PLANE-FIRE-INTERVAL))))
         :green (let [hunt (ai.green-hunt-target w px py)]
-                 (when (> hunt 0)
+                 (when (and hunt (> hunt 0))
                    (set new-fire (or (fire-aimed-plane-bullet! w px py heading hunt :green c.BULLET-DMG plane-id)
                                      new-fire))))
         _ nil))

@@ -10,7 +10,7 @@
 
 (local tests
   [:startup-test :world-test :ai-evade-test :flight-bounds-test :plane-bounds-test
-   :round-end-test :turret-target-test])
+   :round-end-test :turret-target-test :green-fire-test :strafe-heading-test])
 
 (-> tests
     select-tests

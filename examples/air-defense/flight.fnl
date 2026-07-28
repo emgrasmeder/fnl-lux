@@ -53,12 +53,14 @@
   (let [m c.PLANE-EDGE-MARGIN
         x-min m
         x-max (- c.WINDOW-W m)
-        y-min m]
+        y-min m
+        ground-limit (- c.GROUND-Y c.GROUND-AVOID-MARGIN)]
     (var dx 0)
     (var dy 0)
     (when (< x x-min) (set dx (+ dx (- x-min x))))
     (when (> x x-max) (set dx (- dx (- x x-max))))
     (when (< y y-min) (set dy (+ dy (- y-min y))))
+    (when (> y ground-limit) (set dy (- dy (- y ground-limit))))
     (if (or (not= dx 0) (not= dy 0))
         (math.atan dy dx)
         nil)))

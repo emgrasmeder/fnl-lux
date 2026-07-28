@@ -141,7 +141,7 @@
     (tset state :time-left (- (. state :time-left) dt))
     (when (not (combat.buildings-alive? game w))
       (enter-summary! state :loss))
-    (when (and (= (. state :phase) :playing) (= (spawn.count-alive-planes w) 0))
+    (when (and (= (. state :phase) :playing) (= (spawn.count-team w :red) 0))
       (enter-summary! state :win))
     (when (and (= (. state :phase) :playing) (<= (. state :time-left) 0))
       (enter-summary! state :win))))

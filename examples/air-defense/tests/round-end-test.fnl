@@ -14,8 +14,24 @@
   (let [w (create world.component-spec)]
     {:world w :turret-id 0 :building-ids []}))
 
+(deftest no-reds-with-green-alive-wins-test
+  (testing "zero alive reds ends round with victory while friendlies remain"
+    (let [game (empty-game)
+          w game.world
+          state (systems.initial-state game)]
+      (create-entity w [:actor :plane
+                        :position 400 200
+                        :velocity 0 0
+                        :heading 0
+                        :hp c.PLANE-HP
+                        :team :green
+                        :plane-ai :hunt 0 0 0])
+      (systems.step game state 0.016)
+      (assert-eq :summary (. state :phase))
+      (assert-eq :win (. state :outcome)))))
+
 (deftest empty-sky-early-victory-test
-  (testing "no alive planes ends round with victory"
+  (testing "no alive reds ends round with victory"
     (let [game (empty-game)
           w game.world
           state (systems.initial-state game)
