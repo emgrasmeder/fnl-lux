@@ -63,7 +63,7 @@
 
 (fn stats-panel-rect []
   (let [w 220
-        h 100
+        h 120
         x (/ (- (window-width) w) 2)
         y (/ (- (window-height) h) 2)]
     [x y w h]))

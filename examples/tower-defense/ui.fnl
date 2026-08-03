@@ -41,10 +41,11 @@
 
 (fn render-hud [state]
   (love.graphics.setColor 1 1 1 1)
-  (love.graphics.print (.. "Escapes: " state.escapes "/" world-mod.MAX-ESCAPES) 8 8)
-  (love.graphics.print (.. "Wave: " state.wave-index "/" (systems.wave-count)) 8 24)
-  (love.graphics.print (.. "Creeps: " (# state.creep-ids)) 8 40)
-  (love.graphics.print (.. "Kills: " (or state.kills 0)) 8 56))
+  (love.graphics.print (.. "Budget: " (or state.budget 0)) 8 8)
+  (love.graphics.print (.. "Escapes: " state.escapes "/" world-mod.MAX-ESCAPES) 8 24)
+  (love.graphics.print (.. "Wave: " state.wave-index "/" (systems.wave-count)) 8 40)
+  (love.graphics.print (.. "Creeps: " (# state.creep-ids)) 8 56)
+  (love.graphics.print (.. "Kills: " (or state.kills 0)) 8 72))
 
 (fn render-button [label x y w h enabled?]
   (if enabled?
@@ -65,9 +66,10 @@
     (let [[px py pw ph] (world-mod.stats-panel-rect)
           kills (or state.kills 0)
           towers (systems.towers-built game)
-          line1 (.. "Kills: " kills)
-          line2 (.. "Towers: " towers)
-          line3 (.. "Escapes: " state.escapes "/" world-mod.MAX-ESCAPES)
+          line1 (.. "Budget: " (or state.budget 0))
+          line2 (.. "Kills: " kills)
+          line3 (.. "Towers: " towers)
+          line4 (.. "Escapes: " state.escapes "/" world-mod.MAX-ESCAPES)
           screen-w (world-mod.window-width)
           screen-h (world-mod.window-height)]
       (love.graphics.setColor 0 0 0 0.5)
@@ -75,9 +77,10 @@
       (love.graphics.setColor 0.12 0.12 0.16 1)
       (love-ui.fill-rect "fill" px py pw ph)
       (love.graphics.setColor 1 1 1 1)
-      (love.graphics.print line1 (+ px 16) (+ py 18))
-      (love.graphics.print line2 (+ px 16) (+ py 40))
-      (love.graphics.print line3 (+ px 16) (+ py 62)))))
+      (love.graphics.print line1 (+ px 16) (+ py 14))
+      (love.graphics.print line2 (+ px 16) (+ py 36))
+      (love.graphics.print line3 (+ px 16) (+ py 58))
+      (love.graphics.print line4 (+ px 16) (+ py 80)))))
 
 (fn render [game state]
   (love-ui.clear-background)

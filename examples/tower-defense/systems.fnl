@@ -5,6 +5,8 @@
 (local world-mod (require :world))
 (local pathfinding (require :pathfinding))
 (local waves (require :waves))
+(local creep-types (require :creep-types))
+(local tower-types (require :tower-types))
 
 (fn distance-squared [x1 y1 x2 y2]
   (+ (* (- x1 x2) (- x1 x2)) (* (- y1 y2) (- y1 y2))))
@@ -53,10 +55,12 @@
         path (pathfinding.path-to-exit game.terrain game.grid-w game.grid-h
                                        row col (world-mod.left-opening-cells))
         prev (. state.creep-paths id)
-        walk-phase (or (and prev (. prev :walk-phase)) 0)]
+        walk-phase (or (and prev (. prev :walk-phase)) 0)
+        creep-type (or (and prev (. prev :type)) :base)]
     (tset state.creep-paths id {:path (or path [])
                                :path-idx (if (and path (> (# path) 1)) 2 1)
-                               :walk-phase walk-phase})))
+                               :walk-phase walk-phase
+                               :type creep-type})))
 
 (fn repath-all-creeps! [game state]
   (each [_ id (ipairs state.creep-ids)]
@@ -71,6 +75,7 @@
                                                  :hp world-mod.CREEP-HP
                                                  :creep])]
     (table.insert state.creep-ids id)
+    (tset state.creep-paths id {:path [] :path-idx 1 :walk-phase 0 :type :base})
     (repath-creep! game state id)))
 
 (fn move-toward [x y tx ty speed dt]
@@ -123,20 +128,24 @@
 
 (fn try-place-tower! [game state row col]
   (when (can-edit-towers? state)
-    (let [left-openings (world-mod.left-opening-cells)
-          right-openings (world-mod.right-opening-cells)
-          creep-cells (creep-grid-cells game state)]
-      (when (pathfinding.placement-valid? game.terrain game.grid-w game.grid-h
-                                          row col left-openings right-openings
-                                          creep-cells true)
-        (let [key (world-mod.cell-key row col)]
-          (tset game.terrain key :tower)
-          (tset state.towers key {:type world-mod.DEFAULT-TOWER-TYPE
-                                  :cooldown 0
-                                  :row row
-                                  :col col})
-          (repath-all-creeps! game state)
-          true)))))
+    (let [tower-type world-mod.DEFAULT-TOWER-TYPE
+          tower-cost (tower-types.cost tower-type)]
+      (when (>= state.budget tower-cost)
+        (let [left-openings (world-mod.left-opening-cells)
+              right-openings (world-mod.right-opening-cells)
+              creep-cells (creep-grid-cells game state)]
+          (when (pathfinding.placement-valid? game.terrain game.grid-w game.grid-h
+                                              row col left-openings right-openings
+                                              creep-cells true)
+            (let [key (world-mod.cell-key row col)]
+              (tset game.terrain key :tower)
+              (tset state.towers key {:type tower-type
+                                      :cooldown 0
+                                      :row row
+                                      :col col})
+              (tset state :budget (- state.budget tower-cost))
+              (repath-all-creeps! game state)
+              true)))))))
 
 (fn try-remove-tower! [game state row col]
   (when (can-edit-towers? state)
@@ -146,9 +155,13 @@
       (when (pathfinding.placement-valid? game.terrain game.grid-w game.grid-h
                                           row col left-openings right-openings
                                           creep-cells false)
-        (let [key (world-mod.cell-key row col)]
+        (let [key (world-mod.cell-key row col)
+              tower (. state.towers key)
+              tower-type (or (and tower (. tower :type))
+                             world-mod.DEFAULT-TOWER-TYPE)]
           (tset game.terrain key :empty)
           (tset state.towers key nil)
+          (tset state :budget (+ state.budget (tower-types.refund tower-type)))
           (repath-all-creeps! game state)
           true)))))
 
@@ -275,6 +288,7 @@
   (when (and (= state.phase :playing)
              (= state.wave-remaining 0)
              (= (# state.creep-ids) 0))
+    (tset state :budget (+ state.budget (* state.wave-index 100)))
     (if (< state.wave-index (wave-count))
         (do
           (tset state :wave-index (+ state.wave-index 1))
@@ -287,8 +301,12 @@
     (when (= :escaped (advance-creep! game state id dt))
       (table.insert escaped id)))
   (each [_ id (ipairs escaped)]
-    (remove-creep! game state id)
-    (set state.escapes (+ state.escapes 1)))
+    (let [creep-data (. state.creep-paths id)
+          escape-cost (creep-types.escape-cost
+                       (or (and creep-data (. creep-data :type)) :base))]
+      (remove-creep! game state id)
+      (set state.escapes (+ state.escapes 1))
+      (tset state :budget (math.max 0 (- state.budget escape-cost)))))
   (when (>= state.escapes world-mod.MAX-ESCAPES)
     (tset state :phase :ended))
   (when (not= state.phase :ended)
@@ -347,6 +365,7 @@
 
 (fn initial-state []
   {:phase :building
+   :budget (* 10 (tower-types.cost :blaster))
    :escapes 0
    :kills 0
    :stats-open false

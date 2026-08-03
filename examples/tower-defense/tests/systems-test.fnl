@@ -41,6 +41,7 @@
       (assert-eq 1 state.wave-index)
       (assert-eq 0 state.wave-remaining)
       (assert-eq 0 state.kills)
+      (assert-eq 250 state.budget)
       (assert-not state.stats-open)
       (assert-eq nil state.wave-spawn-row))))
 
@@ -87,6 +88,7 @@
       (systems.check-wave-complete! state)
       (assert-eq :building state.phase)
       (assert-eq 2 state.wave-index)
+      (assert-eq 350 state.budget)
       (systems.handle-key game state "return")
       (assert-eq 2 state.wave-index)
       (assert-eq :playing state.phase)
@@ -185,17 +187,20 @@
       (tset state :wave-remaining 1)
       (systems.update-creeps! game state 0)
       (assert-eq 1 state.escapes)
-      (assert-eq 0 (# state.creep-ids)))))
+      (assert-eq 0 (# state.creep-ids))
+      (assert-eq 240 state.budget))))
 
 (deftest spawn-creep-has-hp-test
-  (testing "spawned creep has CREEP-HP"
+  (testing "spawned creep has CREEP-HP and base type"
     (math.randomseed 1)
     (let [game (fresh-game)
           state (systems.initial-state)]
       (systems.spawn-creep! game state)
       (let [id (. state.creep-ids 1)
-            components (get-table-by-id game.world id)]
-        (assert-eq world.CREEP-HP (. components.hp 1))))))
+            components (get-table-by-id game.world id)
+            creep-data (. state.creep-paths id)]
+        (assert-eq world.CREEP-HP (. components.hp 1))
+        (assert-eq :base (. creep-data :type))))))
 
 (deftest place-tower-records-blaster-test
   (testing "placing a tower records blaster type in state.towers"
@@ -216,7 +221,7 @@
                                              :hp world.CREEP-HP
                                              :creep])]
     (table.insert state.creep-ids id)
-    (tset state.creep-paths id {:path [] :path-idx 1 :walk-phase 0})
+    (tset state.creep-paths id {:path [] :path-idx 1 :walk-phase 0 :type :base})
     id))
 
 (fn drain-bullets! [game state steps step-dt]
@@ -318,3 +323,67 @@
         (systems.update-creeps! game state 0.1)
         (let [after (or (. (. state.creep-paths id) :walk-phase) 0)]
           (assert-is (> after before)))))))
+
+(deftest place-tower-deducts-budget-test
+  (testing "placing a tower deducts tower cost from budget"
+    (let [game (fresh-game)
+          state (systems.initial-state)]
+      (assert-eq 250 state.budget)
+      (assert-is (systems.try-place-tower! game state 15 15))
+      (assert-eq 225 state.budget)
+      (assert-eq :tower (. game.terrain (world.cell-key 15 15))))))
+
+(deftest unaffordable-place-noop-test
+  (testing "cannot place tower when budget is below cost"
+    (let [game (fresh-game)
+          state (systems.initial-state)]
+      (tset state :budget 24)
+      (assert-not (systems.try-place-tower! game state 15 15))
+      (assert-eq :empty (. game.terrain (world.cell-key 15 15)))
+      (assert-eq 24 state.budget))))
+
+(deftest remove-tower-refunds-budget-test
+  (testing "removing a tower refunds 60 percent of cost"
+    (let [game (fresh-game)
+          state (systems.initial-state)]
+      (systems.try-place-tower! game state 15 15)
+      (assert-eq 225 state.budget)
+      (assert-is (systems.try-remove-tower! game state 15 15))
+      (assert-eq 240 state.budget)
+      (assert-eq :empty (. game.terrain (world.cell-key 15 15))))))
+
+(deftest escape-clamps-budget-at-zero-test
+  (testing "escape cost clamps budget at zero"
+    (let [game (fresh-game)
+          state (systems.initial-state)
+          opening (. (world.left-opening-cells) 1)
+          [x y] (world.cell-center-at (. opening :row) (. opening :col))
+          id (world.create-entity game.world [:position x y
+                                               :grid-pos (. opening :row) (. opening :col)
+                                               :hp world.CREEP-HP
+                                               :creep])]
+      (systems.play! game state)
+      (tset state :budget 5)
+      (tset state :creep-ids [id])
+      (tset state.creep-paths id {:path [{:row (. opening :row) :col (. opening :col)}]
+                                   :path-idx 1
+                                   :type :base})
+      (tset state :wave-remaining 1)
+      (systems.update-creeps! game state 0)
+      (assert-eq 0 state.budget)
+      (assert-eq 1 state.escapes))))
+
+(deftest final-wave-clear-awards-and-wins-test
+  (testing "final wave clear awards wave-index times 100 then wins"
+    (let [game (fresh-game)
+          state (systems.initial-state)
+          final (systems.wave-count)]
+      (systems.play! game state)
+      (tset state :wave-index final)
+      (tset state :wave-remaining 0)
+      (tset state :creep-ids [])
+      (tset state :budget 0)
+      (systems.check-wave-complete! state)
+      (assert-eq :won state.phase)
+      (assert-eq (* final 100) state.budget)
+      (assert-eq final state.wave-index))))
