@@ -51,9 +51,12 @@
         row (. components.grid-pos 1)
         col (. components.grid-pos 2)
         path (pathfinding.path-to-exit game.terrain game.grid-w game.grid-h
-                                       row col (world-mod.left-opening-cells))]
+                                       row col (world-mod.left-opening-cells))
+        prev (. state.creep-paths id)
+        walk-phase (or (and prev (. prev :walk-phase)) 0)]
     (tset state.creep-paths id {:path (or path [])
-                               :path-idx (if (and path (> (# path) 1)) 2 1)})))
+                               :path-idx (if (and path (> (# path) 1)) 2 1)
+                               :walk-phase walk-phase})))
 
 (fn repath-all-creeps! [game state]
   (each [_ id (ipairs state.creep-ids)]
@@ -65,6 +68,7 @@
         [x y] (world-mod.cell-center-at row col)
         id (world-mod.create-entity game.world [:position x y
                                                  :grid-pos row col
+                                                 :hp world-mod.CREEP-HP
                                                  :creep])]
     (table.insert state.creep-ids id)
     (repath-creep! game state id)))
@@ -103,6 +107,10 @@
                         [tx ty] (world-mod.cell-center-at prefer-row prefer-col)
                         [nx ny arrived] (move-toward x y tx ty speed dt)]
                     (run-updates game.world {:position {id [nx ny]}})
+                    (when (or (not= nx x) (not= ny y))
+                      (tset creep-data :walk-phase
+                            (+ (or (. creep-data :walk-phase) 0)
+                               (* dt world-mod.CREEP-BOB-RATE))))
                     (when (and arrived (< path-idx (# path)))
                       (tset creep-data :path-idx (+ path-idx 1)))
                     (let [logical (logical-cell-from-position nx ny prefer-row prefer-col)]
@@ -121,9 +129,14 @@
       (when (pathfinding.placement-valid? game.terrain game.grid-w game.grid-h
                                           row col left-openings right-openings
                                           creep-cells true)
-        (tset game.terrain (world-mod.cell-key row col) :tower)
-        (repath-all-creeps! game state)
-        true))))
+        (let [key (world-mod.cell-key row col)]
+          (tset game.terrain key :tower)
+          (tset state.towers key {:type world-mod.DEFAULT-TOWER-TYPE
+                                  :cooldown 0
+                                  :row row
+                                  :col col})
+          (repath-all-creeps! game state)
+          true)))))
 
 (fn try-remove-tower! [game state row col]
   (when (can-edit-towers? state)
@@ -133,9 +146,11 @@
       (when (pathfinding.placement-valid? game.terrain game.grid-w game.grid-h
                                           row col left-openings right-openings
                                           creep-cells false)
-        (tset game.terrain (world-mod.cell-key row col) :empty)
-        (repath-all-creeps! game state)
-        true))))
+        (let [key (world-mod.cell-key row col)]
+          (tset game.terrain key :empty)
+          (tset state.towers key nil)
+          (repath-all-creeps! game state)
+          true)))))
 
 (fn towers-built [game]
   (var count 0)
@@ -157,6 +172,104 @@
       (tset state :wave-spawn-row (world-mod.pick-random-spawn-row))
       (tset state :wave-remaining (. def :count))
       (tset state :spawn-timer world-mod.SPAWN-INTERVAL))))
+
+(fn nearest-creep-id [game state tower-x tower-y]
+  (var best-id nil)
+  (var best-dist math.huge)
+  (each [_ id (ipairs state.creep-ids)]
+    (let [components (get-table-by-id game.world id)]
+      (when components
+        (let [cx (. components.position 1)
+              cy (. components.position 2)
+              dist (distance-squared tower-x tower-y cx cy)]
+          (when (< dist best-dist)
+            (set best-dist dist)
+            (set best-id id))))))
+  best-id)
+
+(fn apply-tower-damage! [game state creep-id damage]
+  (let [components (get-table-by-id game.world creep-id)]
+    (when components
+      (let [hp (- (. components.hp 1) damage)]
+        (if (<= hp 0)
+            (do
+              (remove-creep! game state creep-id)
+              (tset state :kills (+ state.kills 1)))
+            (run-updates game.world {:hp {creep-id [hp]}}))))))
+
+(fn spawn-bullet! [game state x y target-x target-y damage]
+  (let [dx (- target-x x)
+        dy (- target-y y)
+        dist (math.sqrt (+ (* dx dx) (* dy dy)))
+        speed world-mod.BULLET-SPEED
+        vx (if (> dist 0) (* speed (/ dx dist)) 0)
+        vy (if (> dist 0) (* speed (/ dy dist)) 0)
+        id (world-mod.create-entity game.world [:position x y
+                                                 :velocity vx vy
+                                                 :bullet-damage damage
+                                                 :bullet])]
+    (table.insert state.bullet-ids id)
+    id))
+
+(fn remove-bullet! [game state id]
+  (let [removals {}]
+    (tset removals id true)
+    (run-removals game.world removals))
+  (var kept [])
+  (each [_ bullet-id (ipairs state.bullet-ids)]
+    (when (not= bullet-id id)
+      (table.insert kept bullet-id)))
+  (tset state :bullet-ids kept))
+
+(fn circle-hit? [x1 y1 r1 x2 y2 r2]
+  (let [limit (+ r1 r2)]
+    (<= (distance-squared x1 y1 x2 y2) (* limit limit))))
+
+(fn bullet-off-board? [x y]
+  (or (< x (- world-mod.BOARD-OX 40))
+      (> x (+ (world-mod.window-width) 40))
+      (< y (- world-mod.BOARD-OY 40))
+      (> y (+ (world-mod.board-bottom) 40))))
+
+(fn update-bullets! [game state dt]
+  (var to-remove [])
+  (each [_ id (ipairs state.bullet-ids)]
+    (let [comps (get-table-by-id game.world id)]
+      (when comps
+        (let [bx (+ (. comps.position 1) (* (. comps.velocity 1) dt))
+              by (+ (. comps.position 2) (* (. comps.velocity 2) dt))
+              damage (. comps.bullet-damage 1)]
+          (run-updates game.world {:position {id [bx by]}})
+          (var hit? false)
+          (each [_ creep-id (ipairs state.creep-ids)]
+            (when (not hit?)
+              (let [creep (get-table-by-id game.world creep-id)]
+                (when (and creep
+                           (circle-hit? bx by world-mod.BULLET-RADIUS
+                                        (. creep.position 1) (. creep.position 2)
+                                        world-mod.CREEP-HIT-RADIUS))
+                  (apply-tower-damage! game state creep-id damage)
+                  (set hit? true)
+                  (table.insert to-remove id)))))
+          (when (and (not hit?) (bullet-off-board? bx by))
+            (table.insert to-remove id))))))
+  (each [_ id (ipairs to-remove)]
+    (remove-bullet! game state id)))
+
+(fn update-towers! [game state dt]
+  (each [_ tower (pairs state.towers)]
+    (let [cooldown (math.max 0 (- (or tower.cooldown 0) dt))]
+      (tset tower :cooldown cooldown)
+      (when (<= cooldown 0)
+        (let [[tx ty] (world-mod.cell-center-at tower.row tower.col)
+              target-id (nearest-creep-id game state tx ty)]
+          (when target-id
+            (let [comps (get-table-by-id game.world target-id)]
+              (when comps
+                (spawn-bullet! game state tx ty
+                               (. comps.position 1) (. comps.position 2)
+                               world-mod.BLASTER-DAMAGE)
+                (tset tower :cooldown world-mod.BLASTER-FIRE-INTERVAL)))))))))
 
 (fn check-wave-complete! [state]
   (when (and (= state.phase :playing)
@@ -242,7 +355,9 @@
    :wave-remaining 0
    :wave-spawn-row nil
    :creep-ids []
-   :creep-paths {}})
+   :creep-paths {}
+   :towers {}
+   :bullet-ids []})
 
 (fn overlay-text [state]
   (case state.phase
@@ -253,7 +368,11 @@
 (fn step [game state dt]
   (when (= state.phase :playing)
     (update-spawn! game state dt)
-    (update-creeps! game state dt)))
+    (update-creeps! game state dt)
+    (update-towers! game state dt)
+    (update-bullets! game state dt)
+    (when (not= state.phase :ended)
+      (check-wave-complete! state))))
 
 {:distance-squared distance-squared
  :logical-cell-from-position logical-cell-from-position
@@ -267,6 +386,13 @@
  :try-place-tower! try-place-tower!
  :try-remove-tower! try-remove-tower!
  :towers-built towers-built
+ :nearest-creep-id nearest-creep-id
+ :apply-tower-damage! apply-tower-damage!
+ :spawn-bullet! spawn-bullet!
+ :remove-bullet! remove-bullet!
+ :circle-hit? circle-hit?
+ :update-bullets! update-bullets!
+ :update-towers! update-towers!
  :handle-click handle-click
  :handle-key handle-key
  :start-wave! start-wave!

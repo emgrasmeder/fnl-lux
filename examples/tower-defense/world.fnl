@@ -20,6 +20,15 @@
 (local MAX-ESCAPES 10)
 (local CREEP-SPEED 3)
 (local SPAWN-INTERVAL 1.0)
+(local CREEP-HP 100)
+(local BLASTER-DAMAGE 10)
+(local BLASTER-FIRE-INTERVAL 1.0)
+(local DEFAULT-TOWER-TYPE :blaster)
+(local CREEP-DRAW-RADIUS (* CELL-SIZE 0.4))
+(local CREEP-HIT-RADIUS CREEP-DRAW-RADIUS)
+(local CREEP-BOB-RATE 10)
+(local BULLET-SPEED 400)
+(local BULLET-RADIUS 3)
 
 (fn cell-key [row col] (grid.pos-key row col))
 
@@ -122,7 +131,11 @@
 (fn create-game-world []
   (let [lux-world (create {:position [:x :y]
                           :grid-pos [:row :col]
-                          :creep []})]
+                          :hp [:n]
+                          :velocity [:vx :vy]
+                          :bullet-damage [:n]
+                          :creep []
+                          :bullet []})]
     {:world lux-world
      :terrain (build-terrain)
      :grid-w GRID-W
@@ -145,6 +158,15 @@
  :MAX-ESCAPES MAX-ESCAPES
  :CREEP-SPEED CREEP-SPEED
  :SPAWN-INTERVAL SPAWN-INTERVAL
+ :CREEP-HP CREEP-HP
+ :BLASTER-DAMAGE BLASTER-DAMAGE
+ :BLASTER-FIRE-INTERVAL BLASTER-FIRE-INTERVAL
+ :DEFAULT-TOWER-TYPE DEFAULT-TOWER-TYPE
+ :CREEP-DRAW-RADIUS CREEP-DRAW-RADIUS
+ :CREEP-HIT-RADIUS CREEP-HIT-RADIUS
+ :CREEP-BOB-RATE CREEP-BOB-RATE
+ :BULLET-SPEED BULLET-SPEED
+ :BULLET-RADIUS BULLET-RADIUS
  :cell-key cell-key
  :cell-bounds-at cell-bounds-at
  :cell-center-at cell-center-at

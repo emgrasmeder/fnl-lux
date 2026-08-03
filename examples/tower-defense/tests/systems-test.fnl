@@ -6,6 +6,7 @@
 (local systems (require :systems))
 (local lux-world (require :io.github.emgrasmeder.lux.world))
 (local get-table-by-id (. lux-world :get-table-by-id))
+(local run-updates (. lux-world :run-updates))
 
 (fn fresh-game []
   (world.create-game-world))
@@ -175,6 +176,7 @@
           [x y] (world.cell-center-at (. opening :row) (. opening :col))
           id (world.create-entity game.world [:position x y
                                                :grid-pos (. opening :row) (. opening :col)
+                                               :hp world.CREEP-HP
                                                :creep])]
       (systems.play! game state)
       (tset state :creep-ids [id])
@@ -184,3 +186,135 @@
       (systems.update-creeps! game state 0)
       (assert-eq 1 state.escapes)
       (assert-eq 0 (# state.creep-ids)))))
+
+(deftest spawn-creep-has-hp-test
+  (testing "spawned creep has CREEP-HP"
+    (math.randomseed 1)
+    (let [game (fresh-game)
+          state (systems.initial-state)]
+      (systems.spawn-creep! game state)
+      (let [id (. state.creep-ids 1)
+            components (get-table-by-id game.world id)]
+        (assert-eq world.CREEP-HP (. components.hp 1))))))
+
+(deftest place-tower-records-blaster-test
+  (testing "placing a tower records blaster type in state.towers"
+    (let [game (fresh-game)
+          state (systems.initial-state)]
+      (assert-is (systems.try-place-tower! game state 15 15))
+      (let [tower (. state.towers (world.cell-key 15 15))]
+        (assert-is tower)
+        (assert-eq :blaster (. tower :type))
+        (assert-eq 0 (. tower :cooldown))
+        (assert-eq 15 (. tower :row))
+        (assert-eq 15 (. tower :col))))))
+
+(fn place-creep-at! [game state row col]
+  (let [[x y] (world.cell-center-at row col)
+        id (world.create-entity game.world [:position x y
+                                             :grid-pos row col
+                                             :hp world.CREEP-HP
+                                             :creep])]
+    (table.insert state.creep-ids id)
+    (tset state.creep-paths id {:path [] :path-idx 1 :walk-phase 0})
+    id))
+
+(fn drain-bullets! [game state steps step-dt]
+  (for [_ 1 steps]
+    (systems.update-bullets! game state step-dt)))
+
+(deftest blaster-spawns-bullet-then-damages-test
+  (testing "ready blaster spawns bullet; damage applies on contact"
+    (let [game (fresh-game)
+          state (systems.initial-state)
+          id (place-creep-at! game state 15 16)]
+      (systems.play! game state)
+      (systems.try-place-tower! game state 15 15)
+      (let [tower (. state.towers (world.cell-key 15 15))]
+        (tset tower :cooldown 0)
+        (systems.update-towers! game state 0)
+        (assert-eq 1 (# state.bullet-ids))
+        (assert-eq world.CREEP-HP (. (get-table-by-id game.world id) :hp 1))
+        (assert-eq world.BLASTER-FIRE-INTERVAL (. tower :cooldown))
+        (drain-bullets! game state 20 0.05)
+        (assert-eq 0 (# state.bullet-ids))
+        (assert-eq (- world.CREEP-HP world.BLASTER-DAMAGE)
+                   (. (get-table-by-id game.world id) :hp 1))))))
+
+(deftest blaster-fire-interval-test
+  (testing "second shot waits BLASTER-FIRE-INTERVAL"
+    (let [game (fresh-game)
+          state (systems.initial-state)
+          id (place-creep-at! game state 15 16)]
+      (systems.play! game state)
+      (systems.try-place-tower! game state 15 15)
+      (let [tower (. state.towers (world.cell-key 15 15))]
+        (tset tower :cooldown 0)
+        (systems.update-towers! game state 0)
+        (assert-eq 1 (# state.bullet-ids))
+        (systems.update-towers! game state 0.5)
+        (assert-eq 1 (# state.bullet-ids))
+        (systems.update-towers! game state 0.5)
+        (assert-eq 2 (# state.bullet-ids))
+        (drain-bullets! game state 20 0.05)
+        (assert-eq (- world.CREEP-HP (* 2 world.BLASTER-DAMAGE))
+                   (. (get-table-by-id game.world id) :hp 1))))))
+
+(deftest blaster-targets-nearest-test
+  (testing "tower aims at closer creep, not farther"
+    (let [game (fresh-game)
+          state (systems.initial-state)
+          near-id (place-creep-at! game state 15 16)
+          far-id (place-creep-at! game state 15 25)]
+      (systems.play! game state)
+      (systems.try-place-tower! game state 15 15)
+      (let [tower (. state.towers (world.cell-key 15 15))]
+        (tset tower :cooldown 0)
+        (systems.update-towers! game state 0)
+        (assert-eq 1 (# state.bullet-ids))
+        (drain-bullets! game state 20 0.05)
+        (assert-eq (- world.CREEP-HP world.BLASTER-DAMAGE)
+                   (. (get-table-by-id game.world near-id) :hp 1))
+        (assert-eq world.CREEP-HP (. (get-table-by-id game.world far-id) :hp 1))))))
+
+(deftest blaster-kill-increments-score-test
+  (testing "bullet kill removes creep and increments kills"
+    (let [game (fresh-game)
+          state (systems.initial-state)
+          id (place-creep-at! game state 15 16)]
+      (systems.play! game state)
+      (systems.try-place-tower! game state 15 15)
+      (run-updates game.world {:hp {id [world.BLASTER-DAMAGE]}})
+      (let [tower (. state.towers (world.cell-key 15 15))]
+        (tset tower :cooldown 0)
+        (systems.update-towers! game state 0)
+        (drain-bullets! game state 20 0.05)
+        (assert-eq 0 (# state.creep-ids))
+        (assert-eq 0 (# state.bullet-ids))
+        (assert-eq 1 state.kills)
+        (assert-eq nil (get-table-by-id game.world id))))))
+
+(deftest bullet-miss-despawns-test
+  (testing "bullet with no creeps despawns off board without scoring"
+    (let [game (fresh-game)
+          state (systems.initial-state)
+          [tx ty] (world.cell-center-at 15 15)
+          [cx cy] (world.cell-center-at 15 1)]
+      (systems.play! game state)
+      (systems.spawn-bullet! game state tx ty cx cy world.BLASTER-DAMAGE)
+      (assert-eq 1 (# state.bullet-ids))
+      (drain-bullets! game state 80 0.05)
+      (assert-eq 0 (# state.bullet-ids))
+      (assert-eq 0 state.kills))))
+
+(deftest creep-bob-advances-while-moving-test
+  (testing "walk-phase advances when creep moves"
+    (math.randomseed 1)
+    (let [game (fresh-game)
+          state (systems.initial-state)]
+      (systems.spawn-creep! game state)
+      (let [id (. state.creep-ids 1)
+            before (or (. (. state.creep-paths id) :walk-phase) 0)]
+        (systems.update-creeps! game state 0.1)
+        (let [after (or (. (. state.creep-paths id) :walk-phase) 0)]
+          (assert-is (> after before)))))))

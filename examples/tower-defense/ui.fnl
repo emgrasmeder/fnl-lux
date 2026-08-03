@@ -3,6 +3,8 @@
 (local world-mod (require :world))
 (local systems (require :systems))
 (local love-ui (require :shared.love-ui))
+(local creep-draw (require :creep-draw))
+(local bullet-draw (require :bullet-draw))
 
 (fn render-terrain [game]
   (for [row 1 game.grid-h]
@@ -20,20 +22,29 @@
           _ nil)))))
 
 (fn render-creeps [game state]
-  (love.graphics.setColor 0.85 0.2 0.25 1)
   (each [_ id (ipairs state.creep-ids)]
     (let [components (get-table-by-id game.world id)]
       (when components
         (let [x (. components.position 1)
               y (. components.position 2)
-              radius (* world-mod.CELL-SIZE 0.25)]
-          (love.graphics.circle "fill" x y radius))))))
+              creep-data (. state.creep-paths id)
+              phase (or (and creep-data (. creep-data :walk-phase)) 0)]
+          (creep-draw.render-creep! x y world-mod.CREEP-DRAW-RADIUS phase))))))
+
+(fn render-bullets [game state]
+  (each [_ id (ipairs (or state.bullet-ids []))]
+    (let [components (get-table-by-id game.world id)]
+      (when components
+        (bullet-draw.render-bullet! (. components.position 1)
+                                    (. components.position 2)
+                                    world-mod.BULLET-RADIUS)))))
 
 (fn render-hud [state]
   (love.graphics.setColor 1 1 1 1)
   (love.graphics.print (.. "Escapes: " state.escapes "/" world-mod.MAX-ESCAPES) 8 8)
   (love.graphics.print (.. "Wave: " state.wave-index "/" (systems.wave-count)) 8 24)
-  (love.graphics.print (.. "Creeps: " (# state.creep-ids)) 8 40))
+  (love.graphics.print (.. "Creeps: " (# state.creep-ids)) 8 40)
+  (love.graphics.print (.. "Kills: " (or state.kills 0)) 8 56))
 
 (fn render-button [label x y w h enabled?]
   (if enabled?
@@ -74,6 +85,7 @@
   (love-ui.render-line-grid world-mod.BOARD-OX world-mod.BOARD-OY
                             world-mod.GRID-W world-mod.GRID-H world-mod.CELL-SIZE)
   (render-creeps game state)
+  (render-bullets game state)
   (render-hud state)
   (render-bottom-bar state)
   (let [text (systems.overlay-text state)]
