@@ -4,7 +4,7 @@
 (local visual (require :shared.testing.visual-runner))
 
 (local WIN-W 680)
-(local WIN-H 680)
+(local WIN-H 688)
 
 (local scenarios
   [{:name "initial" :build (fn []
@@ -22,6 +22,7 @@
                                   (math.randomseed 42)
                                   (let [game (world-mod.create-game-world)
                                         state (systems.initial-state)]
+                                    (systems.play! game state)
                                     (systems.spawn-creep! game state)
                                     (systems.update-creeps! game state 0.5)
                                     (values game state)))}
@@ -32,13 +33,22 @@
                                   (tset state :phase :ended)
                                   (tset state :escapes 10)
                                   (values game state)))}
-   {:name "between-waves" :build (fn []
-                                    (math.randomseed 42)
-                                    (let [game (world-mod.create-game-world)
-                                          state (systems.initial-state)]
-                                      (tset state :wave-remaining 0)
-                                      (tset state :phase :between-waves)
-                                      (values game state)))}])
+   {:name "building" :build (fn []
+                               (math.randomseed 42)
+                               (let [game (world-mod.create-game-world)
+                                     state (systems.initial-state)]
+                                 (tset state :wave-index 2)
+                                 (tset state :phase :building)
+                                 (values game state)))}
+   {:name "stats-open" :build (fn []
+                                 (math.randomseed 42)
+                                 (let [game (world-mod.create-game-world)
+                                       state (systems.initial-state)]
+                                   (systems.try-place-tower! game state 15 15)
+                                   (tset state :stats-open true)
+                                   (tset state :kills 0)
+                                   (tset state :escapes 3)
+                                   (values game state)))}])
 
 (fn render-scenario! [scenario]
   (let [(game state) ((. scenario :build))

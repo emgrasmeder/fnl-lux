@@ -1,5 +1,5 @@
 (import-macros
- {: deftest : assert-eq : assert-is : testing}
+ {: deftest : assert-eq : assert-is : assert-not : testing}
  :io.gitlab.andreyorst.fennel-test)
 
 (local world (require :world))
@@ -33,11 +33,23 @@
         (assert-is (. creep-data :path))
         (assert-is (> (# (. creep-data :path)) 1))))))
 
-(deftest wave-starts-with-configured-count-test
-  (testing "first wave remaining matches waves.fnl"
+(deftest starts-in-building-phase-test
+  (testing "game starts in building with wave 1 ready"
+    (let [state (systems.initial-state)]
+      (assert-eq :building state.phase)
+      (assert-eq 1 state.wave-index)
+      (assert-eq 0 state.wave-remaining)
+      (assert-eq 0 state.kills)
+      (assert-not state.stats-open)
+      (assert-eq nil state.wave-spawn-row))))
+
+(deftest play-starts-first-wave-test
+  (testing "Play starts wave 1 with configured count"
     (math.randomseed 1)
-    (let [state (systems.initial-state)
+    (let [game (fresh-game)
+          state (systems.initial-state)
           def (systems.wave-def 1)]
+      (systems.play! game state)
       (assert-eq 1 state.wave-index)
       (assert-eq (. def :count) state.wave-remaining)
       (assert-eq 10 state.wave-remaining)
@@ -48,41 +60,95 @@
   (testing "all creeps in a wave share the spawn row"
     (math.randomseed 7)
     (let [game (fresh-game)
-          state (systems.initial-state)
-          row state.wave-spawn-row]
-      (tset state :wave-remaining 3)
-      (tset state :spawn-timer world.SPAWN-INTERVAL)
-      (systems.update-spawn! game state 0)
-      (systems.update-spawn! game state world.SPAWN-INTERVAL)
-      (systems.update-spawn! game state world.SPAWN-INTERVAL)
-      (assert-eq 3 (# state.creep-ids))
-      (assert-eq 0 state.wave-remaining)
-      (each [_ id (ipairs state.creep-ids)]
-        (let [components (get-table-by-id game.world id)]
-          (assert-eq row (. components.grid-pos 1))
-          (assert-eq world.RIGHT-COL (. components.grid-pos 2)))))))
+          state (systems.initial-state)]
+      (systems.play! game state)
+      (let [row state.wave-spawn-row]
+        (tset state :wave-remaining 3)
+        (tset state :spawn-timer world.SPAWN-INTERVAL)
+        (systems.update-spawn! game state 0)
+        (systems.update-spawn! game state world.SPAWN-INTERVAL)
+        (systems.update-spawn! game state world.SPAWN-INTERVAL)
+        (assert-eq 3 (# state.creep-ids))
+        (assert-eq 0 state.wave-remaining)
+        (each [_ id (ipairs state.creep-ids)]
+          (let [components (get-table-by-id game.world id)]
+            (assert-eq row (. components.grid-pos 1))
+            (assert-eq world.RIGHT-COL (. components.grid-pos 2))))))))
 
 (deftest enter-advances-wave-test
   (testing "Enter starts the next wave after clearance"
     (math.randomseed 1)
     (let [game (fresh-game)
           state (systems.initial-state)]
+      (systems.play! game state)
       (tset state :wave-remaining 0)
       (tset state :creep-ids [])
       (systems.check-wave-complete! state)
-      (assert-eq :between-waves state.phase)
+      (assert-eq :building state.phase)
+      (assert-eq 2 state.wave-index)
       (systems.handle-key game state "return")
       (assert-eq 2 state.wave-index)
       (assert-eq :playing state.phase)
       (assert-eq (. (systems.wave-def 2) :count) state.wave-remaining))))
 
+(deftest play-noop-while-playing-test
+  (testing "Play does nothing during an active wave"
+    (math.randomseed 1)
+    (let [game (fresh-game)
+          state (systems.initial-state)]
+      (systems.play! game state)
+      (let [remaining state.wave-remaining]
+        (systems.play! game state)
+        (assert-eq :playing state.phase)
+        (assert-eq remaining state.wave-remaining)
+        (assert-eq 1 state.wave-index)))))
+
+(deftest place-tower-in-building-test
+  (testing "placing a tower works during building"
+    (let [game (fresh-game)
+          state (systems.initial-state)]
+      (assert-eq :building state.phase)
+      (assert-is (systems.try-place-tower! game state 15 15))
+      (assert-eq :tower (. game.terrain (world.cell-key 15 15)))
+      (assert-eq 1 (systems.towers-built game)))))
+
 (deftest place-tower-test
   (testing "placing a tower updates terrain and repaths"
     (let [game (fresh-game)
           state (systems.initial-state)]
+      (systems.play! game state)
       (systems.spawn-creep! game state)
       (assert-is (systems.try-place-tower! game state 15 15))
       (assert-eq :tower (. game.terrain (world.cell-key 15 15))))))
+
+(deftest towers-built-counts-place-and-remove-test
+  (testing "towers-built tracks place and remove"
+    (let [game (fresh-game)
+          state (systems.initial-state)]
+      (assert-eq 0 (systems.towers-built game))
+      (systems.try-place-tower! game state 15 15)
+      (systems.try-place-tower! game state 15 16)
+      (assert-eq 2 (systems.towers-built game))
+      (systems.try-remove-tower! game state 15 15)
+      (assert-eq 1 (systems.towers-built game)))))
+
+(deftest stats-toggle-test
+  (testing "Stats button toggles overlay; click outside closes"
+    (let [game (fresh-game)
+          state (systems.initial-state)
+          [sx sy] (world.stats-button-rect)
+          [px py] (world.stats-panel-rect)]
+      (systems.handle-click game state (+ sx 1) (+ sy 1) 1)
+      (assert-is state.stats-open)
+      (systems.handle-click game state (+ sx 1) (+ sy 1) 1)
+      (assert-not state.stats-open)
+      (systems.toggle-stats! state)
+      (assert-is state.stats-open)
+      (systems.handle-click game state 1 1 1)
+      (assert-not state.stats-open)
+      (systems.toggle-stats! state)
+      (systems.handle-click game state (+ px 10) (+ py 10) 1)
+      (assert-is state.stats-open))))
 
 (deftest escape-ends-game-test
   (testing "10 escapes ends the game"
@@ -110,6 +176,7 @@
           id (world.create-entity game.world [:position x y
                                                :grid-pos (. opening :row) (. opening :col)
                                                :creep])]
+      (systems.play! game state)
       (tset state :creep-ids [id])
       (tset state :creep-paths id {:path [{:row (. opening :row) :col (. opening :col)}]
                                    :path-idx 1})

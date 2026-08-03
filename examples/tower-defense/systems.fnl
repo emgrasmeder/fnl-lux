@@ -110,8 +110,11 @@
                       (when (creep-escaped? (. logical :row) (. logical :col))
                         :escaped))))))))))
 
+(fn can-edit-towers? [state]
+  (or (= state.phase :playing) (= state.phase :building)))
+
 (fn try-place-tower! [game state row col]
-  (when (or (= state.phase :playing) (= state.phase :between-waves))
+  (when (can-edit-towers? state)
     (let [left-openings (world-mod.left-opening-cells)
           right-openings (world-mod.right-opening-cells)
           creep-cells (creep-grid-cells game state)]
@@ -123,7 +126,7 @@
         true))))
 
 (fn try-remove-tower! [game state row col]
-  (when (or (= state.phase :playing) (= state.phase :between-waves))
+  (when (can-edit-towers? state)
     (let [left-openings (world-mod.left-opening-cells)
           right-openings (world-mod.right-opening-cells)
           creep-cells (creep-grid-cells game state)]
@@ -134,14 +137,12 @@
         (repath-all-creeps! game state)
         true))))
 
-(fn handle-click [game state x y button]
-  (when (or (= state.phase :playing) (= state.phase :between-waves))
-    (let [cell (world-mod.pixel-to-cell x y)]
-      (when cell
-        (case button
-          1 (try-place-tower! game state (. cell :row) (. cell :col))
-          2 (try-remove-tower! game state (. cell :row) (. cell :col))
-          _ nil)))))
+(fn towers-built [game]
+  (var count 0)
+  (each [_ kind (pairs game.terrain)]
+    (when (= kind :tower)
+      (set count (+ count 1))))
+  count)
 
 (fn wave-def [index]
   (. waves index))
@@ -162,7 +163,9 @@
              (= state.wave-remaining 0)
              (= (# state.creep-ids) 0))
     (if (< state.wave-index (wave-count))
-        (tset state :phase :between-waves)
+        (do
+          (tset state :wave-index (+ state.wave-index 1))
+          (tset state :phase :building))
         (tset state :phase :won))))
 
 (fn update-creeps! [game state dt]
@@ -187,32 +190,64 @@
       (spawn-creep! game state)
       (set state.wave-remaining (- state.wave-remaining 1)))))
 
-(fn advance-to-next-wave! [game state]
-  (when (= state.phase :between-waves)
-    (tset state :wave-index (+ state.wave-index 1))
+(fn play! [game state]
+  (when (= state.phase :building)
     (start-wave! game state)))
+
+(fn toggle-stats! [state]
+  (tset state :stats-open (not state.stats-open)))
+
+(fn hit-play? [x y]
+  (let [[bx by bw bh] (world-mod.play-button-rect)]
+    (world-mod.point-in-rect? x y bx by bw bh)))
+
+(fn hit-stats? [x y]
+  (let [[bx by bw bh] (world-mod.stats-button-rect)]
+    (world-mod.point-in-rect? x y bx by bw bh)))
+
+(fn hit-stats-panel? [x y]
+  (let [[px py pw ph] (world-mod.stats-panel-rect)]
+    (world-mod.point-in-rect? x y px py pw ph)))
+
+(fn handle-click [game state x y button]
+  (when (= button 1)
+    (if (hit-play? x y)
+        (play! game state)
+        (hit-stats? x y)
+        (toggle-stats! state)
+        (and state.stats-open (not (hit-stats-panel? x y)))
+        (tset state :stats-open false)
+        state.stats-open
+        nil
+        (can-edit-towers? state)
+        (let [cell (world-mod.pixel-to-cell x y)]
+          (when cell
+            (try-place-tower! game state (. cell :row) (. cell :col))))))
+  (when (and (= button 2) (can-edit-towers? state) (not state.stats-open))
+    (let [cell (world-mod.pixel-to-cell x y)]
+      (when cell
+        (try-remove-tower! game state (. cell :row) (. cell :col))))))
 
 (fn handle-key [game state key]
   (when (= key "return")
-    (advance-to-next-wave! game state)))
+    (play! game state)))
 
 (fn initial-state []
-  (let [state {:phase :playing
-               :escapes 0
-               :spawn-timer 0
-               :wave-index 1
-               :wave-remaining 0
-               :wave-spawn-row nil
-               :creep-ids []
-               :creep-paths {}}]
-    (start-wave! nil state)
-    state))
+  {:phase :building
+   :escapes 0
+   :kills 0
+   :stats-open false
+   :spawn-timer 0
+   :wave-index 1
+   :wave-remaining 0
+   :wave-spawn-row nil
+   :creep-ids []
+   :creep-paths {}})
 
 (fn overlay-text [state]
   (case state.phase
     :ended "GAME OVER — press R"
     :won "YOU WIN — press R"
-    :between-waves "Press Enter for next wave"
     _ nil))
 
 (fn step [game state dt]
@@ -231,10 +266,13 @@
  :creep-escaped? creep-escaped?
  :try-place-tower! try-place-tower!
  :try-remove-tower! try-remove-tower!
+ :towers-built towers-built
  :handle-click handle-click
  :handle-key handle-key
  :start-wave! start-wave!
- :advance-to-next-wave! advance-to-next-wave!
+ :play! play!
+ :advance-to-next-wave! play!
+ :toggle-stats! toggle-stats!
  :check-wave-complete! check-wave-complete!
  :wave-def wave-def
  :wave-count wave-count

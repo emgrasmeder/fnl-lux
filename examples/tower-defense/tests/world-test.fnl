@@ -19,9 +19,23 @@
       (assert-eq :wall (. terrain (world.cell-key 22 world.LEFT-COL))))))
 
 (deftest window-size-test
-  (testing "window fits 30x30 grid"
+  (testing "window fits 30x30 grid plus bottom bar"
     (assert-eq 680 (world.window-width))
-    (assert-eq 680 (world.window-height))))
+    (assert-eq 688 (world.window-height))))
+
+(deftest button-rects-test
+  (testing "Play and Stats sit below the grid"
+    (let [[px py pw ph] (world.play-button-rect)
+          [sx sy sw sh] (world.stats-button-rect)
+          bottom (world.board-bottom)]
+      (assert-is (>= py bottom))
+      (assert-is (>= sy bottom))
+      (assert-eq world.BUTTON-W pw)
+      (assert-eq world.BUTTON-W sw)
+      (assert-eq world.BUTTON-H ph)
+      (assert-eq world.BUTTON-H sh)
+      (assert-is (world.point-in-rect? (+ px 1) (+ py 1) px py pw ph))
+      (assert-not (world.point-in-rect? (+ px 1) (+ py 1) sx sy sw sh)))))
 
 (deftest pixel-to-cell-test
   (testing "pixel-to-cell maps board coordinates"

@@ -8,6 +8,10 @@
 (local CELL-SIZE 20)
 (local BOARD-OX 40)
 (local BOARD-OY 40)
+(local BAR-H 48)
+(local BUTTON-W 100)
+(local BUTTON-H 32)
+(local BUTTON-GAP 8)
 (local OPENING-SIZE 12)
 (local OPENING-START-ROW 10)
 (local OPENING-END-ROW 21)
@@ -26,8 +30,34 @@
   (let [[x y w h] (cell-bounds-at row col)]
     [(+ x (/ w 2)) (+ y (/ h 2))]))
 
+(fn board-bottom []
+  (+ BOARD-OY (* GRID-H CELL-SIZE)))
+
 (fn window-width [] (grid.window-width BOARD-OX GRID-W CELL-SIZE))
-(fn window-height [] (grid.window-height BOARD-OY GRID-H CELL-SIZE))
+
+(fn window-height []
+  (+ (board-bottom) BAR-H))
+
+(fn point-in-rect? [px py x y w h]
+  (and (>= px x) (< px (+ x w))
+       (>= py y) (< py (+ y h))))
+
+(fn play-button-rect []
+  (let [x BOARD-OX
+        y (+ (board-bottom) BUTTON-GAP)]
+    [x y BUTTON-W BUTTON-H]))
+
+(fn stats-button-rect []
+  (let [x (- (window-width) BOARD-OX BUTTON-W)
+        y (+ (board-bottom) BUTTON-GAP)]
+    [x y BUTTON-W BUTTON-H]))
+
+(fn stats-panel-rect []
+  (let [w 220
+        h 100
+        x (/ (- (window-width) w) 2)
+        y (/ (- (window-height) h) 2)]
+    [x y w h]))
 
 (fn left-opening? [row col]
   (and (= col LEFT-COL)
@@ -103,6 +133,10 @@
  :CELL-SIZE CELL-SIZE
  :BOARD-OX BOARD-OX
  :BOARD-OY BOARD-OY
+ :BAR-H BAR-H
+ :BUTTON-W BUTTON-W
+ :BUTTON-H BUTTON-H
+ :BUTTON-GAP BUTTON-GAP
  :OPENING-SIZE OPENING-SIZE
  :OPENING-START-ROW OPENING-START-ROW
  :OPENING-END-ROW OPENING-END-ROW
@@ -114,8 +148,13 @@
  :cell-key cell-key
  :cell-bounds-at cell-bounds-at
  :cell-center-at cell-center-at
+ :board-bottom board-bottom
  :window-width window-width
  :window-height window-height
+ :point-in-rect? point-in-rect?
+ :play-button-rect play-button-rect
+ :stats-button-rect stats-button-rect
+ :stats-panel-rect stats-panel-rect
  :left-opening? left-opening?
  :right-opening? right-opening?
  :opening? opening?
