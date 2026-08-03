@@ -58,6 +58,16 @@ see [`Containerfile`](Containerfile)
 
 The first run builds the `fnl-lux-ci:local` image
 
+### Pre-commit hook
+
+Enable once per clone:
+
+```bash
+./scripts/install-hooks.sh
+```
+
+That sets local `core.hooksPath` to `.githooks`. Every `git commit` then runs `./scripts/ci-test.sh` (needs Podman; same as CI). Skip with `git commit --no-verify`.
+
 ### Running tests natively
 
 If you've installed the deps.fnl binary, you can run
