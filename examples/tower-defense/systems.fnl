@@ -234,6 +234,13 @@
       (table.insert kept bullet-id)))
   (tset state :bullet-ids kept))
 
+(fn clear-bullets! [game state]
+  (let [removals {}]
+    (each [_ id (ipairs state.bullet-ids)]
+      (tset removals id true))
+    (run-removals game.world removals))
+  (tset state :bullet-ids []))
+
 (fn circle-hit? [x1 y1 r1 x2 y2 r2]
   (let [limit (+ r1 r2)]
     (<= (distance-squared x1 y1 x2 y2) (* limit limit))))
@@ -391,7 +398,9 @@
     (update-towers! game state dt)
     (update-bullets! game state dt)
     (when (not= state.phase :ended)
-      (check-wave-complete! state))))
+      (check-wave-complete! state))
+    (when (not= state.phase :playing)
+      (clear-bullets! game state))))
 
 {:distance-squared distance-squared
  :logical-cell-from-position logical-cell-from-position
@@ -409,6 +418,7 @@
  :apply-tower-damage! apply-tower-damage!
  :spawn-bullet! spawn-bullet!
  :remove-bullet! remove-bullet!
+ :clear-bullets! clear-bullets!
  :circle-hit? circle-hit?
  :update-bullets! update-bullets!
  :update-towers! update-towers!

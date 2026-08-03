@@ -312,6 +312,23 @@
       (assert-eq 0 (# state.bullet-ids))
       (assert-eq 0 state.kills))))
 
+(deftest bullets-cleared-on-round-change-test
+  (testing "in-flight bullets despawn when the wave ends"
+    (math.randomseed 1)
+    (let [game (fresh-game)
+          state (systems.initial-state)
+          [tx ty] (world.cell-center-at 15 15)
+          [cx cy] (world.cell-center-at 15 1)]
+      (systems.play! game state)
+      (let [bullet-id (systems.spawn-bullet! game state tx ty cx cy
+                                             world.BLASTER-DAMAGE)]
+        (tset state :wave-remaining 0)
+        (tset state :creep-ids [])
+        (systems.step game state 0.05)
+        (assert-eq :building state.phase)
+        (assert-eq 0 (# state.bullet-ids))
+        (assert-eq nil (get-table-by-id game.world bullet-id))))))
+
 (deftest creep-bob-advances-while-moving-test
   (testing "walk-phase advances when creep moves"
     (math.randomseed 1)
